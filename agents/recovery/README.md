@@ -1,44 +1,45 @@
-# agents/recovery/  ·  Recovery Manager
+# Recovery Agent
 
-**Owner:** Member 5 (Recovery Manager)  (set `owner` in `agent.json` and the handle in `.github/CODEOWNERS`)
+This package evaluates explicitly supplied fee, evidence, reimbursement, and trusted engine-state records. It is deterministic: it does not call an LLM, infer channel policy, submit claims, or treat the sample CSVs as authoritative policy or financial ground truth.
 
-> **This folder currently contains an organiser stub** that replays the synthetic Round 2 CSV. It is *not* an agent. Replace it, then replace this README with one that describes what you actually built, how to run it, and its limits.
+## Operational limits
 
-| | |
-|---|---|
-| **Reads (inputs)** | Channel fee / reimbursement report lines (no camera) |
-| **Reads (previous evidence)** | **All** earlier records |
-| **Produces** | per-charge position (supports / contradicts / silent), a claim with attached evidence and a dollar figure, and an explicit list of what cannot be claimed and why |
-| **Recommended `check_key`s** | one `charge_<line_id>` check per fee line |
-| **`decision.outcome` values** | `claim_recommended, no_claim, insufficient_evidence, pending_review` |
+- The only source contract rules carried over are the typed field checks, evidence mapping, exact-currency reimbursement arithmetic, and verdict projection in `src/recovery_manager/recovery_contract.py`.
+- Claim windows and eligibility authority are not present in the sample files. Supply an authoritative rule record; otherwise the result is `insufficient_evidence`.
+- Amounts use `Decimal`. Fee tolerance is exact (zero); no amount is rounded into a claim. The source code defines no business minimum-claim threshold, so this package invents none.
+- Evidence must match the charge's exact unit, shipment, or order scope. Missing, late, uncertain, or unrelated evidence is not a pass.
+- Prep, receiving, and returns adapters emit only directly observed registered checks. Return completeness, policy-dependent prep validity, and unavailable dimensions/weight remain uncertain. Fee, reimbursement, and inventory-adjustment rows are kept distinct; non-fee ledger rows are unresolved candidates, not proven credits.
+- `internal_facts` must come from a trusted recovery-engine caller. Do not accept it directly from an untrusted client; it carries the currentness and remaining-actionable amount used in the decision.
+- Allowed organisations are configured through `RECOVERY_ALLOWED_ORGS` as comma-separated IDs. An empty allowlist denies all requests.
+- The HTTP wrapper also requires `RECOVERY_INTERNAL_TOKEN` and the `X-Recovery-Internal-Token` header. Do not expose this internal endpoint publicly.
+- Reference fee values and requirement flags are synthetic. Prep image paths are identifiers only: there are no images or bounding-box coordinates in this package.
+- The included PostgreSQL tables are a tenant-scoped audit/assessment store. Apply the agent migration before using them; PostgreSQL RLS is enabled and forced by that migration.
 
-Your check semantics are the one place verdicts read differently: the condition is *"this charge is supported by evidence"*, so `FAIL` = contradicted = **claim**, `UNCERTAIN` = SILENT = **never a claim**. A wrongly filed claim costs a seller standing; a missed one costs only money, so report **precision**. You will meet every contract and data problem first (findings F-07 to F-12): raise them early. In a **Specialist Pod** there is no Prep evidence: inbound-defect charges must be SILENT, not guessed.
+## Precision strategy
 
-## Where your code goes
+1. Validate exact input shape and fixed-point monetary values.
+2. Join evidence only on the declared unit, shipment, or order identity.
+3. Use only registered evidence keys and explicit `pass`, `fail`, or `uncertain` outcomes.
+4. Net reimbursements only when currency and subject agree; require explicit reversal lineage.
+5. Require known, current engine facts and available authoritative rules before projecting a claim verdict.
+6. Convert unexpected handler failures to `uncertain` / `pending`, preserving the operator workflow.
 
-```text
-agents/recovery/
-├── app.py          ← expose  handle(agent_input: dict) -> dict  (an Agent Output). Keep `app = make_app(...)` to serve over HTTP.
-├── agent.json      ← stage · agent_id · owner · mode (inproc | http) · url · an honest `implementation` description
-├── PROVENANCE.md   ← your Round 2 repo URL + commit this came from (create it)
-├── README.md       ← this file, rewritten
-└── …               ← your Round 2 code, prompts, rules, fixtures
+## Run
+
+From the repository root with the project dependencies installed:
+
+```bash
+export RECOVERY_ALLOWED_ORGS=org_demo_alpha,org_demo_bravo
+printf '%s\n' '{"org_id":"org_demo_alpha","charge":{},"credits":[],"evidence":[],"rule":{},"internal_facts":{}}' | python -m agents.recovery.runner
+pytest agents/recovery/tests
 ```
 
-## Integrating, in order
+The example payload intentionally lacks decision inputs and will return `uncertain`; replace it with a normalized request matching the dataclasses in `domain/`. The HTTP app is available as `agents.recovery.app.app` for trusted in-process integration. The manifest selects `inproc` mode.
 
-1. Read [`INTEGRATION-GUIDE.md`](../../INTEGRATION-GUIDE.md) and [`EVIDENCE-CONTRACT.md`](../../EVIDENCE-CONTRACT.md); open [`examples/end-to-end/`](../../examples/) for a real Agent Output.
-2. In `handle()`: read `request["subject"]`, `request["inputs"]` (your captures) and `request["previous_evidence"]`; run your agent (**one batched model call per unit**); build the record with `shared.utils.records.build_record()` and wrap it with `build_output()`.
-3. **Fail open.** On a model error return `pending_output(...)`, not an exception. Never invent evidence: if you did not see it, say UNCERTAIN with an `uncertain_reason`.
-4. **Refuse other tenants.** Raise `LookupError` (HTTP 404) for a subject that is not under `subject.org_id`.
-5. Make it idempotent: the same `request_id` must yield the same `record_id`. Use the **latest override** of previous evidence (`context.overrides`).
-6. Run `pytest tests/integration/test_agent_contracts.py`, first on the stub (it passes), then on yours, **with your own fixtures**.
-7. Run the whole system: `make run` and `make test`.
+## Persistence
 
-## Run on its own
+Configure `RECOVERY_DATABASE_URL` for runtime and `RECOVERY_MIGRATION_DATABASE_URL` for schema changes, install the package's existing SQLAlchemy/Alembic dependencies, then apply the migration with `alembic -c agents/recovery/db/alembic.ini upgrade head`. Every table access must occur inside `tenant_session()` so PostgreSQL receives transaction-local tenant context. Runtime database access requires the non-owner, non-superuser `recovery_app` role with RLS enabled.
 
-```sh
-.venv/bin/uvicorn agents.recovery.app:app --port 8105
-curl localhost:8105/health
-```
-Then set `"mode": "http"` in `agent.json` if you want the orchestrator to call it over HTTP.
+## Evaluation limits
+
+`tests/` exercises contract behavior and adapter joins. `run_eval.py` is a prediction/export harness, not a measured accuracy report. Report per-check false positives and false negatives only after independent labels exist; do not use the included dummy sample flags as truth.

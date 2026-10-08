@@ -1,0 +1,1 @@
+"""Typed recovery domain and deterministic contract projection."""
