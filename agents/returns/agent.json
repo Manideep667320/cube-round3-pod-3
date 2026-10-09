@@ -1,7 +1,7 @@
 {
   "stage": "returns",
   "agent_id": "returns-manager@1.0.0",
-  "owner": "@Manideep667320",
+  "owner": "@Adithya-charan",
   "mode": "inproc",
   "url": "http://localhost:8104",
   "module": "agents.returns.app",

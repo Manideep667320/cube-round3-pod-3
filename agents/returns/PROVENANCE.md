@@ -3,7 +3,7 @@
 ## Origin & Ownership
 - **Agent Stage:** `returns`
 - **Agent ID:** `returns-manager@1.0.0`
-- **Owner:** `@Manideep667320`
+- **Owner:** `@Adithya-charan`
 - **Repository:** [cube-round3-pod-3](https://github.com/Manideep667320/cube-round3-pod-3)
 - **Target Path:** `agents/returns`
 

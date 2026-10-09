@@ -1,0 +1,2 @@
+
+"""Returns Manager backend package."""
