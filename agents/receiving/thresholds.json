@@ -1,0 +1,9 @@
+{
+  "blur_min_variance": 50.0,
+  "glare_max_ratio": 0.08,
+  "glare_pixel_value": 250,
+  "lum_min": 60,
+  "lum_max": 220,
+  "confidence_min": 0.7,
+  "severe_damage_min": 4
+}

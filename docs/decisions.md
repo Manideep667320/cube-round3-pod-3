@@ -77,3 +77,15 @@ A contradiction between documents or data is a **finding**, not a failure. Open 
 ## Your Pod's decisions
 
 _Add entries below._
+
+### Receiving v2 — 2026-10-09 (@gayathri2665)
+
+| # | Decision | Trade-off |
+|---|---|---|
+| R-1 | `decision.verdict` is always `rollup(checks)`; the plan's ACCEPT/QUARANTINE/REJECT/ESCALATE vocabulary lives in `decision.outcome` + `payload.plan_verdict` | schema only allows PASS/FAIL/UNCERTAIN; consumers needing the physical action read outcome + reasons |
+| R-2 | Checks are emitted only when actually judged (no `carton_count` / `unit_damage` filler) | an always-UNCERTAIN filler check would make ACCEPT unreachable; recommended check keys are optional per contract §8 |
+| R-3 | `record_id` = deterministic from `request_id`; genuinely changed findings get a suffixed id | satisfies both idempotency and "different content, new record_id" |
+| R-4 | One FastAPI app (make_app + UI/API routes); `mode` stays `inproc` | `tests/conftest.py` forces `ORCH_MODE=inproc`; HTTP contract endpoints still served |
+| R-5 | Review queue filters `source=ui` | orchestrator runs without captures also land in `final_open` but are not operator work |
+| R-6 | Evaluation is benchmarked directly against the 100 sample units in `data/sample/receiving_sample.csv` (70 train, 30 hold-out) | evaluated purely against manifest & inspection fields without external folder dependencies |
+| R-7 | Overrides are agent-level (append-only, outside the content hash) and mirrored as `RECEIVING_OVERRIDDEN` events | workflow-level overrides in the orchestrator's state are not written automatically |

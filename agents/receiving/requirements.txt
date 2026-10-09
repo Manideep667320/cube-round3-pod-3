@@ -1,0 +1,6 @@
+# Receiving v2 agent deps (install alongside the root requirements.txt).
+# Kept agent-local so the shared requirements.txt needs no Pod-wide coordination.
+opencv-python-headless>=5.0
+zxing-cpp>=3.1
+pillow>=11.0
+python-barcode>=0.16   # fixture image generation for tests
