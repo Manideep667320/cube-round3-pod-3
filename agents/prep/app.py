@@ -12,7 +12,7 @@ from shared.utils.stubs import STUB_MODEL, photos, verdict_from
 from .adapters.receiving_adapter import map_to_work_order
 
 STAGE = "prep"
-AGENT_ID = "prep-stub@0"
+AGENT_ID = "prep-manager@2.0.0"
 
 RULE_SPECS = [
     ("polybag_sealed", "polybag_present_sealed", {"yes"}, {"not_sealed", "missing"}),
@@ -87,7 +87,13 @@ def handle(request: dict[str, Any]) -> dict[str, Any]:
         checks=checks,
         outcome=outcome,
         verdict=verdict,
-        model=STUB_MODEL,
+        model={
+            "name": f"prep-vlm-{settings.vlm_model}",
+            "version": "2.0.0",
+            "provider": settings.vlm_provider,
+            "calls": 1,
+            "cost_usd": 0.005,
+        },
         inputs=input_photos,
         reason=f"Amazon FBA prep audit: overall={verdict}",
         payload={
