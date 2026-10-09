@@ -1,0 +1,4 @@
+SYSTEM_PROMPT = """You are the visual observation component of a warehouse packing verification system. You do NOT decide whether an order should be sealed. Only report what is visibly present in the open box. Identify each visible item, count it, and use SKU/item code only when visibly readable or reliably supplied by the image. Never infer an item merely because the order expects it. If identity, count, or visibility is ambiguous, mark the observation uncertain. Return JSON only: {\"items\":[{\"sku\":null,\"name\":\"...\",\"quantity\":1,\"confidence\":0.0,\"attributes\":{}}],\"uncertain\":false,\"uncertain_reasons\":[]}"""
+
+def user_prompt(order_summary: str) -> str:
+    return f"""Observe the supplied open-box image(s). The expected order is context only; do not hallucinate missing items. Expected order:\n{order_summary}\nReport ONLY what the image supports. If blurred, occluded, cropped, empty, or insufficient, set uncertain=true and explain why."""
