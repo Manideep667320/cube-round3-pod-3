@@ -1,5 +1,7 @@
 # Pack Manager — Round 3
 
+**Owner:** Ayesha (@ayeshaxsa) · [`PROVENANCE.md`](PROVENANCE.md)
+
 Pack verifies the contents of an open merchant-fulfilled box before sealing.
 
 ## Decision boundary

@@ -3,9 +3,9 @@
 # GitHub shows these owners as suggested reviewers. Enforcement needs branch protection (see GITHUB-GUIDE.md).
 /agents/receiving/    @gayathri2665
 /agents/prep/         @Manideep667320
-/agents/pack/         @pack-owner-handle
+/agents/pack/         @ayeshaxsa
 /agents/returns/      @returns-owner-handle
-/agents/recovery/     @recovery-owner-handle
+/agents/recovery/     @saikiranpulagalla
 /orchestration/       @member1 @member2 @member3 @member4 @member5
 /shared/              @member1 @member2 @member3 @member4 @member5
 /tests/               @member1 @member2 @member3 @member4 @member5

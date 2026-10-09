@@ -1,7 +1,7 @@
 {
   "stage": "pack",
   "agent_id": "pack-manager@3.0.0",
-  "owner": "@Manideep667320",
+  "owner": "@ayeshaxsa",
   "mode": "inproc",
   "module": "agents.pack.app",
   "url": "http://localhost:8103",

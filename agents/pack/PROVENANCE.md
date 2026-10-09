@@ -1,6 +1,7 @@
 # Provenance
 
-Round 3 Pack Manager is the Round 2 Pack Manager adapted into the CUBE Round 3 Pod contract.
+- **Owner:** Ayesha (@ayeshaxsa)
+- Round 3 Pack Manager is the Round 2 Pack Manager adapted into the CUBE Round 3 Pod contract.
 
 Round 2 repository:
 https://github.com/Cube-Build-A-Thon/cube-03-pack-manager
