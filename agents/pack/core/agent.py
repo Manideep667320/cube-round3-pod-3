@@ -1,10 +1,11 @@
 from __future__ import annotations
-import csv, json, os
+import json, os
 from pathlib import Path
 from typing import Any
 from shared.utils.records import build_output, build_record, check
-from .verifier import expected_from_any, verify_pack
+from .verifier import verify_pack
 from ..vision.observer import observe, VisionError
+from ..adapters import extract_expected_order, inspect_prep_gate
 
 STAGE="pack"; AGENT_ID=os.getenv("PACK_AGENT_ID","pack-manager@3.0.0"); MODEL=os.getenv("PACK_MODEL","gpt-4.1-mini"); ROOT=Path(__file__).resolve().parents[3]
 
@@ -20,30 +21,8 @@ def _guard_tenant(request):
     s=request["subject"]; expected=_sample_org(s["subject_id"])
     if expected and expected != s["org_id"]: raise LookupError(f"subject {s['subject_id']} does not belong to {s['org_id']}")
 
-def _parse_document(path):
-    try:
-        if path.suffix.lower()==".json": return expected_from_any(json.loads(path.read_text()))
-        if path.suffix.lower()==".csv":
-            with path.open(newline="") as fh: return [dict(r) for r in csv.DictReader(fh)]
-    except Exception: pass
-    return []
-
 def _expected_from_request(request):
-    ctx=request.get("context") or {}
-    for src in (ctx,ctx.get("case") or {}):
-        for key in ("order_lines","expected_items","items"):
-            got=expected_from_any(src.get(key));
-            if got: return got
-    for item in request.get("inputs") or []:
-        p=Path(str(item.get("ref","")))
-        for candidate in (p,_input_root()/p,ROOT/p):
-            if candidate.is_file() and candidate.suffix.lower() in {".json",".csv"}:
-                got=_parse_document(candidate)
-                if got: return got
-    for ev in reversed(request.get("previous_evidence") or []):
-        got=expected_from_any((ev.get("payload") or {}).get("order_lines"))
-        if got: return got
-    return []
+    return extract_expected_order(request, input_root=_input_root(), repo_root=ROOT)
 
 def _record(request, checks, *, outcome, reason, model, status="completed", verdict=None, confidence=None, needs_human=None, payload=None):
     prior=request.get("previous_evidence") or []
@@ -60,6 +39,9 @@ def _uncertain(request, reason, model=None):
 def handle(request):
     if request.get("stage") != STAGE: raise ValueError("stage must be pack")
     _guard_tenant(request)
+    prep_gate = inspect_prep_gate(request)
+    if prep_gate and not prep_gate["ready_for_pack"]:
+        return _uncertain(request, f"Pack held: Prep gate is {prep_gate['gate_status']} (verdict={prep_gate['overall_verdict']}).")
     expected=_expected_from_request(request)
     if not expected: return _uncertain(request,"No trusted order lines were supplied to Pack; refusing to invent expected contents.")
     images=[x for x in request.get("inputs",[]) if x.get("kind")=="image" or str(x.get("ref","")).lower().endswith((".jpg",".jpeg",".png",".webp"))]
@@ -73,5 +55,7 @@ def handle(request):
     verdict="FAIL" if any(c["verdict"]=="FAIL" for c in checks) else ("UNCERTAIN" if any(c["verdict"]=="UNCERTAIN" for c in checks) else "PASS")
     outcome={"PASS":"seal","FAIL":"stop_and_fix","UNCERTAIN":"pending_review"}[verdict]
     confs=[x.get("confidence") for x in observed if isinstance(x,dict) and isinstance(x.get("confidence"),(int,float))]; confidence=min(confs) if confs else None
-    rec=_record(request,checks,outcome=outcome,reason=f"Pack verification result: {outcome}.",model=model,verdict=verdict,confidence=confidence,needs_human=verdict=="UNCERTAIN",payload={"observed_in_box":observed,"expected_order":expected,"verification":result})
+    payload={"observed_in_box":observed,"expected_order":expected,"verification":result}
+    if prep_gate: payload["prep_gate"]=prep_gate
+    rec=_record(request,checks,outcome=outcome,reason=f"Pack verification result: {outcome}.",model=model,verdict=verdict,confidence=confidence,needs_human=verdict=="UNCERTAIN",payload=payload)
     return build_output(rec,next_step={"PASS":"continue","FAIL":"route_to_recovery","UNCERTAIN":"review"}[verdict])

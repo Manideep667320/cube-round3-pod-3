@@ -17,9 +17,13 @@ Deterministic verification compares observed contents with trusted order lines:
 
 Only `handle()` returns an Agent Output. The orchestrator remains the owner of workflow state.
 
-## Input contract
+## Input contract & Adapters
 
-Pack consumes the Round 3 Agent Input. Preferred order data is structured `order_lines` / `expected_items` in stage context or a JSON/CSV capture. The open-box image is supplied through `inputs[]`.
+Pack consumes the Round 3 Agent Input via its `adapters/` layer:
+- `adapters/order_adapter.py`: extracts structured `order_lines` / `expected_items` from stage context, attached JSON/CSV manifests, or upstream evidence.
+- `adapters/prep_adapter.py`: inspects upstream Prep evidence to verify cartonization clearance (`ready_for_pack: True`, `gate_status: "ALLOW"`).
+
+The open-box image is supplied through `inputs[]`.
 
 ## Model policy
 
