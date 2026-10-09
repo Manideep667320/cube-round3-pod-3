@@ -1,44 +1,48 @@
-# agents/returns/  ·  Returns Manager
+# agents/returns/  ·  Returns Manager Agent
 
-**Owner:** Member 4 (Returns Manager)  (set `owner` in `agent.json` and the handle in `.github/CODEOWNERS`)
+**Owner:** `@Manideep667320` (`returns-manager@1.0.0`)
 
-> **This folder currently contains an organiser stub** that replays the synthetic Round 2 CSV. It is *not* an agent. Replace it, then replace this README with one that describes what you actually built, how to run it, and its limits.
+The **Returns Manager Agent** evaluates product returns to verify product identity, check accessory completeness, grade item condition using Amazon's published condition scale, and determine evidence-backed dispositions.
 
-| | |
+---
+
+## Capabilities & Architecture
+
+| Component | Description |
 |---|---|
-| **Reads (inputs)** | Photos of the returned parcel and the expected parts list |
-| **Reads (previous evidence)** | Pack (what was sent), Receiving |
-| **Produces** | identity, completeness, condition, disposition |
-| **Recommended `check_key`s** | `identity_match, completeness, condition` |
-| **`decision.outcome` values** | `restock, refurbish, liquidate, dispose, pending_review` |
+| **Reads (inputs)** | Returned item captures/photos, expected SKU, expected parts list |
+| **Reads (upstream)** | Pack & Receiving stage evidence records |
+| **Checks Produced** | `identity_match`, `completeness`, `condition` |
+| **Condition Scale** | Amazon Published Condition Scale (`New`, `Used - Like New`, `Used - Very Good`, `Used - Good`, `Used - Acceptable`, `Unsellable`) |
+| **Dispositions** | `restock`, `refurbish`, `liquidate`, `dispose`, `pending_review` |
+| **AI / Vision Pipeline** | RapidOCR + YOLOv8n + Groq API Qwen 3.8 27B Vision Model (`qwen/qwen3.8-27b`) |
 
-Grade condition on **Amazon's published condition scale**: do not invent your own (the Round 2 data leaves `amazon_condition` empty on purpose). The shipped stub does not grade condition (`payload.condition_graded: false`) and copies the operator's disposition: replace it. Returns on FBA-routed units are an open question (finding F-11).
+---
 
-## Where your code goes
+## Directory Structure
 
 ```text
 agents/returns/
-├── app.py          ← expose  handle(agent_input: dict) -> dict  (an Agent Output). Keep `app = make_app(...)` to serve over HTTP.
-├── agent.json      ← stage · agent_id · owner · mode (inproc | http) · url · an honest `implementation` description
-├── PROVENANCE.md   ← your Round 2 repo URL + commit this came from (create it)
-├── README.md       ← this file, rewritten
-└── …               ← your Round 2 code, prompts, rules, fixtures
+├── app.py              ← FastAPI server & handle(request) entry point
+├── agent.json          ← Agent metadata & configuration
+├── engine.py           ← Returns inspection logic & check builder
+├── condition.py        ← Amazon published condition classifier & disposition rules
+├── vision.py           ← Multimodal vision pipeline (OCR, YOLO, Groq Qwen Vision)
+├── PROVENANCE.md       ← Component provenance & architectural notes
+├── README.md           ← Agent documentation
+└── tests/              ← Unit & contract integration tests
+    └── test_returns.py
 ```
 
-## Integrating, in order
+---
 
-1. Read [`INTEGRATION-GUIDE.md`](../../INTEGRATION-GUIDE.md) and [`EVIDENCE-CONTRACT.md`](../../EVIDENCE-CONTRACT.md); open [`examples/end-to-end/`](../../examples/) for a real Agent Output.
-2. In `handle()`: read `request["subject"]`, `request["inputs"]` (your captures) and `request["previous_evidence"]`; run your agent (**one batched model call per unit**); build the record with `shared.utils.records.build_record()` and wrap it with `build_output()`.
-3. **Fail open.** On a model error return `pending_output(...)`, not an exception. Never invent evidence: if you did not see it, say UNCERTAIN with an `uncertain_reason`.
-4. **Refuse other tenants.** Raise `LookupError` (HTTP 404) for a subject that is not under `subject.org_id`.
-5. Make it idempotent: the same `request_id` must yield the same `record_id`. Use the **latest override** of previous evidence (`context.overrides`).
-6. Run `pytest tests/integration/test_agent_contracts.py`, first on the stub (it passes), then on yours, **with your own fixtures**.
-7. Run the whole system: `make run` and `make test`.
+## Running the Returns Agent
 
-## Run on its own
+```bash
+# Serve over HTTP (Port 8104)
+python -m uvicorn agents.returns.app:app --port 8104
 
-```sh
-.venv/bin/uvicorn agents.returns.app:app --port 8104
-curl localhost:8104/health
+# Run tests
+pytest tests/integration/test_agent_contracts.py -k returns
+pytest agents/returns/tests/
 ```
-Then set `"mode": "http"` in `agent.json` if you want the orchestrator to call it over HTTP.

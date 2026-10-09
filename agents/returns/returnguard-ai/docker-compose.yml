@@ -1,0 +1,40 @@
+# ReturnGuard AI — local stack
+# Backend (FastAPI + SQLite volume) and frontend dev server.
+# Copy .env.example → backend/.env and set real values before starting.
+
+services:
+  backend:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+      - ./storage:/storage
+      - backend-data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:////app/data/returnguard.db
+      - STORAGE_DIR=/storage/uploads
+      # All other settings come from /app/.env (mounted with ./backend)
+    command: >
+      sh -c "pip install --no-cache-dir -r requirements.txt &&
+             alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    ports:
+      - "8000:8000"
+
+  frontend:
+    image: node:20-slim
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - frontend-modules:/app/node_modules
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      - VITE_API_TARGET=http://backend:8000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  backend-data:
+  frontend-modules:

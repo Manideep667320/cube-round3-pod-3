@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --color-brand-50: #eef4ff;
+  --color-brand-100: #dce7ff;
+  --color-brand-500: #3b5bdb;
+  --color-brand-600: #3048b8;
+  --color-brand-700: #263992;
+}
+
+html {
+  @apply antialiased;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 font-sans;
+}
+
+/* Visible, consistent focus ring for keyboard users */
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}
+
+/* Screen-reader only utility (Tailwind provides sr-only; kept for clarity) */
+.sr-only-focusable:focus {
+  @apply not-sr-only;
+}
