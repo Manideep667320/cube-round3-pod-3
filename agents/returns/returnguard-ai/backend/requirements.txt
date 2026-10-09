@@ -1,0 +1,43 @@
+# ReturnGuard AI - backend dependencies (pinned)
+# Create the venv:  python -m venv .venv && .venv/Scripts/pip install -r requirements.txt  (Windows)
+#                    python3 -m venv .venv && .venv/bin/pip install -r requirements.txt     (macOS/Linux)
+
+# --- Web framework & persistence ---
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+pydantic-settings==2.7.1
+SQLAlchemy==2.0.36
+alembic==1.14.0
+python-multipart==0.0.20
+PyJWT==2.10.1
+httpx==0.28.1
+
+# --- Imaging & QR ---
+Pillow==11.1.0
+qrcode==8.0
+numpy==2.2.1
+
+# --- AI visual reasoning: Groq SDK (Qwen vision stage) ---
+groq==1.7.0
+
+# --- Computer vision: OCR (RapidOCR = PP-OCRv4 models via onnxruntime) ---
+rapidocr-onnxruntime==1.4.4
+onnxruntime==1.31.0
+
+# --- Computer vision: YOLO object detection (CPU wheels on Windows/macOS) ---
+# torch CPU wheels are installed automatically on Windows/macOS. On Linux, for a
+# CPU-only install use:  pip install torch==2.14.1 torchvision==0.29.1 --index-url https://download.pytorch.org/whl/cpu
+# before installing the rest of this file (avoids pulling CUDA libraries).
+ultralytics==8.4.174
+torch==2.14.1
+torchvision==0.29.1
+opencv-python==5.0.0.93
+
+# --- Testing ---
+pytest==8.3.4
+pytest-asyncio==0.25.2
+
+# Full resolved environment (including transitive deps) is recorded in
+# requirements.freeze.txt for reproducible installs:
+#   pip install -r requirements.freeze.txt
