@@ -123,7 +123,8 @@ class BatchedVLMClient:
         import google.genai as genai
         from google.genai import types
 
-        client = genai.Client(api_key=settings.vlm_api_key)
+        api_key = settings.vlm_api_key or os.environ.get("GEMINI_API_KEY", "")
+        client = genai.Client(api_key=api_key)
         prompt_text = (
             f"{BATCHED_INSPECTION_SYSTEM_PROMPT}\n\n"
             f"Work Order Context:\n"
@@ -161,7 +162,7 @@ class BatchedVLMClient:
                 contents.append(f"[Photo Reference: {ref}]")
 
         response = await client.aio.models.generate_content(
-            model=settings.vlm_model if "gemini" in settings.vlm_model else "gemini-2.5-flash",
+            model=settings.vlm_model if "gemini" in settings.vlm_model else "gemini-3.5-flash",
             contents=contents,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",

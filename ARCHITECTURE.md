@@ -116,15 +116,90 @@ Every failure is **recorded and never becomes success**: a degraded evidence rec
 
 ---
 
-## Your Pod's architecture  ← **replace this section**
+## Your Pod's architecture: Pod 3 Unified Commerce System
 
-_Delete this note and describe **your** system. At minimum:_
+### 1. System Architecture & Flow
 
-1. **Diagram** of your actual components and flow, including anything you added.
-2. **What each agent really is**: model, rules, services, dependencies; which are still stubs.
-3. **Your orchestrator**: approach, how workflow state is stored, retries, how evidence is persisted, how overrides work (link the decisions in `docs/decisions.md`).
-4. **Your routing and final-outcome logic**, and how they treat uncertainty and weak evidence.
-5. **Tenancy**: where it is enforced, and how you tested it.
-6. **Failure model**: what you break in the demo and what happens.
-7. **Deployment**: where it runs, how to reach it, how to start it.
-8. **Known limits.**
+Pod 3 operates as a unified commerce operations platform where a single stateful Orchestrator coordinates five specialized domain agents speaking the strict Evidence Contract v1.0. Upstream physical evidence flows downstream to form an unbroken audit ledger that directly backs Amazon fee dispute recoveries.
+
+```mermaid
+flowchart TD
+    subgraph INGRESS["Warehouse Ingress & Order Fulfillment"]
+        RCV["Receiving Manager (@gayathri2665)<br/>• Real v2 Engine & Inbound Scanner<br/>• Manifest PO matching & Carton damage<br/>• Distinguishes Supplier Shortfall (F-10)"]
+        FBA{"Route = FBA?"}
+        MFN{"Route = MFN?"}
+        PREP["Prep Manager (@Manideep667320)<br/>• Real Amazon Rules 101-601 Engine<br/>• Google Gemini Flash VLM<br/>• Polybag, FNSKU, Warnings, Dimensions (F-07)"]
+        PACK["Pack Manager (@ayeshaxsa)<br/>• Real Packing Slip & Sealing Engine<br/>• Prep Gate Status Check<br/>• Verifies Pre-Shipment Contents Truth"]
+    end
+
+    subgraph POST_ORDER["Returns & Channel Dispute Operations"]
+        RTN["Returns Manager (@Adithya-charan)<br/>• ReturnGuard AI Engine<br/>• RapidOCR + YOLOv8 + Gemini Multimodal<br/>• Amazon Published Condition Scale<br/>• Confirms Sent Contents Seen (from Pack)<br/>• Emits Identity Proof (F-11)"]
+        RCY["Recovery Manager (@saikiranpulagalla)<br/>• Domain Financial Dispute Engine<br/>• Ingests ALL Upstream Records (RCV, PRP, PCK, RTN)<br/>• Disputes refund_issued_item_not_returned<br/>• Disputes weight tier charges (PRP measurements)<br/>• Never claims on SILENT / Supplier Shortfall"]
+    end
+
+    subgraph STATE["Authoritative State Ledger & Storage"]
+        ORCH["Pod Orchestrator<br/>• Functional Rollup & State Transitions<br/>• Resumption, Retries, Idempotency<br/>• Human Review Queue & Overrides Audit"]
+        NEON[("Neon PostgreSQL & Unified Storage<br/>• Database URL configured via SSL<br/>• Storage: out/workflows & out/evidence")]
+    end
+
+    RCV -->|RCV-*| FBA
+    RCV -->|RCV-*| MFN
+    FBA -->|Route: fba| PREP
+    MFN -->|Route: mfn| PACK
+    PREP -->|PRP-* (if returned)| RTN
+    PACK -->|PCK-* (if returned)| RTN
+    PREP -->|PRP-*| RCY
+    PACK -->|PCK-*| RCY
+    RTN -->|RTN-*| RCY
+    RCY -->|RCY-*| ORCH
+    ORCH <--> NEON
+```
+
+### 2. Concrete Agent Implementations (100% Real Engines, Zero Stubs)
+
+- **Receiving Manager (`agents/receiving/` · `@gayathri2665`)**:
+  - *Implementation:* Real v2 ingestion service with embedded SQLite manifest matching, barcode decoding, carton puncture/crush evaluation, and review queue.
+  - *Data Produced:* `RCV-*` records identifying ordered vs received item count, carton integrity, and supplier shortfall flags (addressing **Finding F-10**).
+- **Prep Manager (`agents/prep/` · `@Manideep667320`)**:
+  - *Implementation:* Amazon packaging rules engine (rules 101–601) integrated with Google Gemini 3.5 Flash multimodal vision. Asynchronously resilient across in-proc and FastAPI HTTP event loops.
+  - *Data Produced:* `PRP-*` records validating polybag seals, suffocation text, seam barcode placement, expiry dates, and packaging dimensions/weights (addressing **Finding F-07**).
+- **Pack Manager (`agents/pack/` · `@ayeshaxsa`)**:
+  - *Implementation:* Real outbound packing verification engine with dedicated Order & Prep Adapters (`order_adapter.py`, `prep_adapter.py`). Enforces gate status (`ALLOW` vs `HOLD`).
+  - *Data Produced:* `PCK-*` records capturing sealed carton integrity, packing slip compliance, and pre-seal item observations.
+- **Returns Manager (`agents/returns/` · `@Adithya-charan`)**:
+  - *Implementation:* ReturnGuard AI combining local edge CV (RapidOCR + Ultralytics YOLOv8), Gemini Multimodal VLM, and Amazon's published 6-point condition scale.
+  - *Data Produced:* `RTN-*` records with product identity match, accessory completeness, physical condition grade, and automated disposition (`restock`, `refurbish`, `liquidate`, `dispose`, `pending_review`).
+- **Recovery Manager (`agents/recovery/` · `@saikiranpulagalla`)**:
+  - *Implementation:* Real domain dispute engine correlating channel fee reports with all upstream physical records (`RCV`, `PRP`, `PCK`, `RTN`). Evaluates claims as `CONTRADICTS` (disputable), `SUPPORTS` (valid fee), or `SILENT` (insufficient proof).
+  - *Data Produced:* `RCY-*` records establishing recovery claims with line-item dollar amounts.
+
+### 3. Orchestration & State Management
+
+- **Authoritative State:** State machine managed in `orchestration/orchestrator.py`. Workflow states (`PENDING`, `IN_PROGRESS`, `COMPLETED`, `BLOCKED`, `FAILED`).
+- **Storage:** Persisted via `FileStore` into `out/workflows/` and `out/evidence/`, with unified tabular data managed in Neon PostgreSQL (`DATABASE_URL`).
+- **Overrides:** Fully append-only and non-destructive (`apply_override()`). An operator override creates an `OVR-*` transition that preserves the original evidence while updating effective verdicts.
+- **Resilience:** Uncaught exceptions or timeouts yield degraded evidence records (`status: error`). Calling `resume()` recovers execution once the service is restored.
+
+### 4. Routing, Policies, and Uncertainty
+
+- **Routing:** Governed by `orchestration/flow.json`. FBA units route to Prep; MFN units route to Pack; units with `returned: true` route to Returns. Unknown routes cleanly skip both fulfillment stages with an explicit audit transition.
+- **Uncertainty (`on_uncertain: continue`):** Low-confidence observations proceed to downstream stages without halting warehouse operations. If an UNCERTAIN stage flags `needs_human: True`, the workflow transitions to `BLOCKED` with outcome `NEEDS_REVIEW` until an operator resolves the queue.
+
+### 5. Multi-Tenancy Enforcement
+
+- Strict `org_id` scoping is verified at **three independent boundaries**:
+  1. The Orchestrator validates `request["subject"]["org_id"]` against the workflow before invoking any agent.
+  2. Each agent refuses cross-tenant subject IDs (raising `LookupError` in-process or HTTP 404/422).
+  3. The storage layer verifies tenant integrity before saving evidence records.
+
+### 6. Failure & Recovery Model
+
+- Simulated agent outages (timeouts, connection drops, process crashes) produce degraded records (`status: error`), transition the workflow to `FAILED` with provisional outcome `INCOMPLETE`, and never report false successes.
+- Workflows resume from their exact halted stage using `resume(workflow_id)`.
+
+### 7. Deployment & Verification
+
+- **In-process execution:** `python -m orchestration.api` (zero network overhead, instant execution).
+- **Service mode:** `docker compose up --build` or individual FastAPI microservices communicating over HTTP (`GET /health`, `POST /run`).
+- **Database:** Neon PostgreSQL remote instance verified via SSL connection string.
+- **Automated Validation:** 100% of integration, contract, and end-to-end tests pass across all agents (`pytest tests/`).

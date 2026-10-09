@@ -89,3 +89,43 @@ _Add entries below._
 | R-5 | Review queue filters `source=ui` | orchestrator runs without captures also land in `final_open` but are not operator work |
 | R-6 | Evaluation is benchmarked directly against the 100 sample units in `data/sample/receiving_sample.csv` (70 train, 30 hold-out) | evaluated purely against manifest & inspection fields without external folder dependencies |
 | R-7 | Overrides are agent-level (append-only, outside the content hash) and mirrored as `RECEIVING_OVERRIDDEN` events | workflow-level overrides in the orchestrator's state are not written automatically |
+
+### Prep v2 — 2026-10-09 (@Manideep667320)
+
+| # | Decision | Trade-off |
+|---|---|---|
+| P-1 | Standardized on Amazon Rules 101–601 + Google Gemini Flash multimodal VLM | Pure rules miss physical image nuances; Gemini VLM validates polybag seals, suffocation text, and FNSKU seam positions |
+| P-2 | Hardened async execution with event loop offloading (`concurrent.futures`) | Calling `asyncio.run` inside FastAPI's running event loop crashed HTTP mode; thread pool execution guarantees safe dual-mode operation (inproc + HTTP) |
+| P-3 | Emits `payload.measurements` (length, width, height, gross weight) to resolve **Finding F-07** | Provides ground-truth physical packaging data downstream, enabling Recovery to contest Amazon `fulfilment_fee_weight_tier` overcharges |
+
+### Pack v1 — 2026-10-09 (@ayeshaxsa)
+
+| # | Decision | Trade-off |
+|---|---|---|
+| PK-1 | Decoupled domain engine from orchestrator using `order_adapter.py` and `prep_adapter.py` | Adapters translate upstream `RCV` / `PRP` evidence into internal order representations without altering core packing verification code |
+| PK-2 | Enforces Prep gate check (`ALLOW` vs `HOLD`) before sealing | Prevents packaging non-compliant units while allowing compliant units to proceed cleanly |
+| PK-3 | Records pre-seal contents observations in `payload` | Provides pre-shipment baseline truth used by Returns to detect customer-swapped or missing return items |
+
+### Returns v1 — 2026-10-09 (@Adithya-charan)
+
+| # | Decision | Trade-off |
+|---|---|---|
+| RT-1 | ReturnGuard AI: edge CV (RapidOCR + YOLOv8) + Google Gemini multimodal fallback | Local edge inference runs instantly offline; Gemini provides semantic reasoning on wear and accessory completeness |
+| RT-2 | Authoritative Amazon Published 6-Point Condition Scale (`New`, `Used - Like New`, `Used - Very Good`, `Used - Good`, `Used - Acceptable`, `Unsellable`) | Maps directly to published Amazon warehouse return disposition standards (`restock`, `refurbish`, `liquidate`, `dispose`) |
+| RT-3 | Inspects Pack evidence (`sent_contents_seen`) to resolve **Finding F-11** | Cross-references pre-shipment contents against return arrivals; verified SKU matches produce PASS evidence records cited by Recovery |
+
+### Recovery v2 — 2026-10-09 (@saikiranpulagalla)
+
+| # | Decision | Trade-off |
+|---|---|---|
+| RC-1 | Strict dispute positioning: `CONTRADICTS` (actionable claim), `SUPPORTS` (valid fee), `SILENT` (insufficient proof) | Never raises false-positive dispute claims; protects seller account health from frivolous Amazon support escalations |
+| RC-2 | Zero-dollar fees treated as `SILENT` (**Finding F-09**) | Claiming $0.00 is commercially meaningless; avoids cluttering recovery submissions |
+| RC-3 | Distinguishes supplier shortfall from channel loss (**Finding F-10**) | Receiving supplier shortages do not support carrier/Amazon `lost_inbound` claims |
+| RC-4 | Cites Returns proof for `refund_issued_item_not_returned` (**Finding F-11**) | If Returns verified the correct item was received (`identity_match == PASS`), Recovery cites `RTN-*` to claw back the customer refund |
+
+### Infrastructure & Orchestration Unified Decisions
+
+| # | Decision | Trade-off |
+|---|---|---|
+| I-1 | Single unified PostgreSQL database (Neon) for production, single SQLite file for local dev | Eliminates 5 fragmented storage engines; keeps state synchronized across microservices |
+| I-2 | Google Gemini (`gemini-3.5-flash`) as the unified cloud multimodal model | Single API key (`GEMINI_API_KEY`) powers visual inspection across all agents with consistent prompt latency |

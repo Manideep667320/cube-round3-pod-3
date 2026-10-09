@@ -19,6 +19,28 @@ def observe(images: list[dict[str,Any]], expected: list[dict[str,Any]], *, model
     if not images: raise VisionError("no_pack_capture")
     paths=[p for x in images if (p:=_resolve_ref(str(x["ref"]),input_root)) and p.suffix.lower() in {".jpg",".jpeg",".png",".webp"}]
     if not paths: raise VisionError("pack_image_not_found")
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    if gemini_key and not os.getenv("OPENAI_API_KEY"):
+        try:
+            from google import genai
+            from google.genai import types
+            g_client = genai.Client(api_key=gemini_key)
+            g_contents = [SYSTEM_PROMPT, user_prompt(json.dumps(expected, ensure_ascii=False, indent=2))]
+            for p in paths:
+                mime = mimetypes.guess_type(p.name)[0] or "image/jpeg"
+                g_contents.append(types.Part.from_bytes(data=p.read_bytes(), mime_type=mime))
+            g_model = os.getenv("MODEL_NAME", "gemini-3.5-flash")
+            g_resp = g_client.models.generate_content(
+                model=g_model,
+                contents=g_contents,
+                config=types.GenerateContentConfig(response_mime_type="application/json")
+            )
+            parsed = json.loads(g_resp.text or "{}")
+            if isinstance(parsed.get("items"), list):
+                return parsed["items"], {"name": g_model, "version": g_model, "provider": "google", "prompt_version": "pack-vision-v1", "calls": 1, "cost_usd": None, "uncertain": bool(parsed.get("uncertain")), "uncertain_reasons": parsed.get("uncertain_reasons") or []}
+        except Exception as exc:
+            raise VisionError(f"gemini_inference_failed: {exc}") from exc
+
     try: from openai import OpenAI
     except Exception as exc: raise VisionError(f"openai_client_unavailable: {exc}") from exc
     if not os.getenv("OPENAI_API_KEY"): raise VisionError("OPENAI_API_KEY_missing")

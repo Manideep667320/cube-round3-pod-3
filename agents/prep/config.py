@@ -19,10 +19,10 @@ class Settings(BaseSettings):
     fixtures_dir: Path = base_dir.parent.parent / "fixtures"
 
     # Multimodal VLM settings (Rule 2: Batched single-call)
-    vlm_provider: str = "mock"  # "gemini", "openai", or "mock"
-    vlm_model: str = "gemini-1.5-flash"
+    vlm_provider: str = "gemini"  # "gemini", "openai", or "mock"
+    vlm_model: str = "gemini-3.5-flash"
     vlm_api_key: str = ""
-    vlm_timeout_seconds: float = 0.800  # 800ms P95 limit for warehouse packing line
+    vlm_timeout_seconds: float = 2.0  # limit for warehouse packing line
 
     # Operational economics constraints
     max_cost_per_unit_usd: float = 0.010

@@ -44,7 +44,17 @@ def handle(request: dict[str, Any]) -> dict[str, Any]:
     photo_refs = [p["ref"] for p in input_photos]
 
     # 2. Execute authoritative Prep Manager engine (inspect_prepped_unit)
-    prep_record = asyncio.run(inspect_prepped_unit(work_order, photo_refs))
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            prep_record = pool.submit(asyncio.run, inspect_prepped_unit(work_order, photo_refs)).result()
+    else:
+        prep_record = asyncio.run(inspect_prepped_unit(work_order, photo_refs))
 
     # 3. Construct schema-compliant checks
     checks = []
