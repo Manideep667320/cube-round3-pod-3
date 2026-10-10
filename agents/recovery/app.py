@@ -134,10 +134,13 @@ def _handle_contract_workflow(request: dict[str, Any]) -> dict[str, Any]:
     outcome = "claim_recommended" if claim else ("insufficient_evidence" if silent else "no_claim")
 
     captured_at = max((l["posted_date"] + "T00:00:00Z" for l in lines if l.get("posted_date")), default=utcnow())
+    base_rid = f"RCY-{subject_id}"
+    req_id = request.get("request_id", "")
+    rid = f"{base_rid}-r{req_id.split(':r')[-1]}" if ":r" in req_id else base_rid
     record = build_record(
         request,
         agent_id=AGENT_ID,
-        record_id=f"RCY-{subject_id}",
+        record_id=rid,
         model=STUB_MODEL,
         captured_at=captured_at,
         checks=checks,

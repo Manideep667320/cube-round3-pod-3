@@ -8,7 +8,8 @@
     {
       "when": {
         "route": [
-          "fba"
+          "fba",
+          "all"
         ]
       },
       "stage": "prep"
@@ -16,7 +17,9 @@
     {
       "when": {
         "route": [
-          "mfn"
+          "fba",
+          "mfn",
+          "all"
         ]
       },
       "stage": "pack"

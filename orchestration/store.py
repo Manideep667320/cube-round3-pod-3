@@ -37,12 +37,27 @@ class MemoryStore:
         self.evidence.setdefault(record["record_id"], record)
 
 
+    def list_workflows(self) -> list[dict]:
+        return [json.loads(json.dumps(wf)) for wf in self.workflows.values()]
+
+
 class FileStore(MemoryStore):
     def __init__(self, root: str | Path | None = None) -> None:
         super().__init__()
         self.root = Path(root or os.environ.get("OUT_DIR", "out"))
         (self.root / "workflows").mkdir(parents=True, exist_ok=True)
         (self.root / "evidence").mkdir(parents=True, exist_ok=True)
+
+    def list_workflows(self) -> list[dict]:
+        out = []
+        p = self.root / "workflows"
+        if p.exists():
+            for f in sorted(p.glob("*.json"), key=lambda x: x.stat().st_mtime, reverse=True):
+                try:
+                    out.append(json.loads(f.read_text()))
+                except Exception:
+                    pass
+        return out
 
     def load_workflow(self, workflow_id: str) -> dict | None:
         p = self.root / "workflows" / f"{workflow_id}.json"

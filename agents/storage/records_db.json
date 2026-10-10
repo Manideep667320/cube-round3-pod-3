@@ -99,7 +99,7 @@
       "fixtures/prep/UNIT-0002_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:57:50.877222+00:00"
+    "captured_at": "2026-10-10T01:02:21.120682+00:00"
   },
   "PRP-0003": {
     "record_id": "PRP-0003",
@@ -201,7 +201,7 @@
       "fixtures/prep/UNIT-0003_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:57:49.857998+00:00"
+    "captured_at": "2026-10-10T01:02:21.153121+00:00"
   },
   "PRP-0004": {
     "record_id": "PRP-0004",
@@ -303,7 +303,7 @@
       "fixtures/prep/UNIT-0004_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:52:27.434711+00:00"
+    "captured_at": "2026-10-10T01:02:26.991413+00:00"
   },
   "PRP-0014": {
     "record_id": "PRP-0014",
@@ -327,7 +327,7 @@
     "evidence_grounding": [
       {
         "check_id": "polybag",
-        "photo_ref": "fixtures/prep/UNIT-0014_front.jpg",
+        "photo_ref": "UNIT-0014/prep/capture.jpg",
         "bbox": [
           80,
           80,
@@ -339,7 +339,7 @@
       },
       {
         "check_id": "suffocation",
-        "photo_ref": "fixtures/prep/UNIT-0014_back.jpg",
+        "photo_ref": "UNIT-0014/prep/capture.jpg",
         "bbox": [
           180,
           220,
@@ -351,7 +351,7 @@
       },
       {
         "check_id": "fnsku",
-        "photo_ref": "fixtures/prep/UNIT-0014_label.jpg",
+        "photo_ref": "UNIT-0014/prep/capture.jpg",
         "bbox": [
           620,
           310,
@@ -363,7 +363,7 @@
       },
       {
         "check_id": "barcode_coverage",
-        "photo_ref": "fixtures/prep/UNIT-0014_label.jpg",
+        "photo_ref": "UNIT-0014/prep/capture.jpg",
         "bbox": [
           620,
           310,
@@ -375,7 +375,7 @@
       },
       {
         "check_id": "expiry",
-        "photo_ref": "fixtures/prep/UNIT-0014_front.jpg",
+        "photo_ref": "UNIT-0014/prep/capture.jpg",
         "bbox": [
           720,
           710,
@@ -387,7 +387,7 @@
       },
       {
         "check_id": "handling",
-        "photo_ref": "fixtures/prep/UNIT-0014_front.jpg",
+        "photo_ref": "UNIT-0014/prep/capture.jpg",
         "bbox": [
           140,
           140,
@@ -400,12 +400,10 @@
     ],
     "operator_override": null,
     "photo_refs": [
-      "fixtures/prep/UNIT-0014_front.jpg",
-      "fixtures/prep/UNIT-0014_back.jpg",
-      "fixtures/prep/UNIT-0014_label.jpg"
+      "UNIT-0014/prep/capture.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:52:28.552643+00:00"
+    "captured_at": "2026-10-10T05:11:49.914207+00:00"
   },
   "PRP-0005": {
     "record_id": "PRP-0005",
@@ -507,7 +505,7 @@
       "fixtures/prep/UNIT-0005_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:52:27.449750+00:00"
+    "captured_at": "2026-10-10T01:02:27.099632+00:00"
   },
   "PRP-0007": {
     "record_id": "PRP-0007",
@@ -609,7 +607,7 @@
       "fixtures/prep/UNIT-0007_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:52:27.474891+00:00"
+    "captured_at": "2026-10-10T01:02:27.160840+00:00"
   },
   "PRP-0010": {
     "record_id": "PRP-0010",
@@ -711,7 +709,7 @@
       "fixtures/prep/UNIT-0010_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:52:28.490637+00:00"
+    "captured_at": "2026-10-10T01:02:29.063165+00:00"
   },
   "PRP-0011": {
     "record_id": "PRP-0011",
@@ -813,7 +811,7 @@
       "fixtures/prep/UNIT-0011_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:52:28.507744+00:00"
+    "captured_at": "2026-10-10T01:02:29.103974+00:00"
   },
   "PRP-0012": {
     "record_id": "PRP-0012",
@@ -915,7 +913,7 @@
       "fixtures/prep/UNIT-0012_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:52:28.522799+00:00"
+    "captured_at": "2026-10-10T01:02:29.239416+00:00"
   },
   "PRP-0013": {
     "record_id": "PRP-0013",
@@ -1017,7 +1015,7 @@
       "fixtures/prep/UNIT-0013_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:52:28.536652+00:00"
+    "captured_at": "2026-10-10T01:02:29.297249+00:00"
   },
   "PRP-0015": {
     "record_id": "PRP-0015",
@@ -1119,7 +1117,7 @@
       "fixtures/prep/UNIT-0015_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:52:29.484491+00:00"
+    "captured_at": "2026-10-10T01:02:33.883624+00:00"
   },
   "PRP-0018": {
     "record_id": "PRP-0018",
@@ -1221,7 +1219,7 @@
       "fixtures/prep/UNIT-0018_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:52:30.518332+00:00"
+    "captured_at": "2026-10-09T17:29:06.209349+00:00"
   },
   "PRP-0020": {
     "record_id": "PRP-0020",
@@ -1323,7 +1321,7 @@
       "fixtures/prep/UNIT-0020_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:52:31.546490+00:00"
+    "captured_at": "2026-10-09T17:29:07.769525+00:00"
   },
   "PRP-0024": {
     "record_id": "PRP-0024",
@@ -1425,7 +1423,7 @@
       "fixtures/prep/UNIT-0024_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:52:33.501776+00:00"
+    "captured_at": "2026-10-09T17:29:10.967911+00:00"
   },
   "PRP-0025": {
     "record_id": "PRP-0025",
@@ -1527,7 +1525,7 @@
       "fixtures/prep/UNIT-0025_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:52:33.517834+00:00"
+    "captured_at": "2026-10-09T17:29:11.013294+00:00"
   },
   "PRP-0026": {
     "record_id": "PRP-0026",
@@ -1629,7 +1627,7 @@
       "fixtures/prep/UNIT-0026_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:52:33.532832+00:00"
+    "captured_at": "2026-10-09T17:29:11.057882+00:00"
   },
   "PRP-0029": {
     "record_id": "PRP-0029",
@@ -1731,7 +1729,7 @@
       "fixtures/prep/UNIT-0029_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:52:34.516108+00:00"
+    "captured_at": "2026-10-09T17:29:12.806466+00:00"
   },
   "PRP-0030": {
     "record_id": "PRP-0030",
@@ -1833,7 +1831,7 @@
       "fixtures/prep/UNIT-0030_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:52:34.535109+00:00"
+    "captured_at": "2026-10-09T17:29:12.849142+00:00"
   },
   "PRP-0031": {
     "record_id": "PRP-0031",
@@ -1935,7 +1933,7 @@
       "fixtures/prep/UNIT-0031_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.033913+00:00"
+    "captured_at": "2026-10-09T17:29:14.386432+00:00"
   },
   "PRP-0035": {
     "record_id": "PRP-0035",
@@ -2037,7 +2035,7 @@
       "fixtures/prep/UNIT-0035_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.049630+00:00"
+    "captured_at": "2026-10-09T17:29:14.510108+00:00"
   },
   "PRP-0036": {
     "record_id": "PRP-0036",
@@ -2139,7 +2137,7 @@
       "fixtures/prep/UNIT-0036_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.064800+00:00"
+    "captured_at": "2026-10-09T17:29:14.565035+00:00"
   },
   "PRP-0038": {
     "record_id": "PRP-0038",
@@ -2241,7 +2239,7 @@
       "fixtures/prep/UNIT-0038_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.070314+00:00"
+    "captured_at": "2026-10-09T17:29:16.137829+00:00"
   },
   "PRP-0039": {
     "record_id": "PRP-0039",
@@ -2343,7 +2341,7 @@
       "fixtures/prep/UNIT-0039_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.075315+00:00"
+    "captured_at": "2026-10-09T17:29:17.771503+00:00"
   },
   "PRP-0041": {
     "record_id": "PRP-0041",
@@ -2445,7 +2443,7 @@
       "fixtures/prep/UNIT-0041_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.096270+00:00"
+    "captured_at": "2026-10-09T17:29:19.389133+00:00"
   },
   "PRP-0042": {
     "record_id": "PRP-0042",
@@ -2547,7 +2545,7 @@
       "fixtures/prep/UNIT-0042_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.102201+00:00"
+    "captured_at": "2026-10-09T17:29:20.844385+00:00"
   },
   "PRP-0045": {
     "record_id": "PRP-0045",
@@ -2649,7 +2647,7 @@
       "fixtures/prep/UNIT-0045_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.127497+00:00"
+    "captured_at": "2026-10-09T17:29:21.919160+00:00"
   },
   "PRP-0046": {
     "record_id": "PRP-0046",
@@ -2751,7 +2749,7 @@
       "fixtures/prep/UNIT-0046_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.133432+00:00"
+    "captured_at": "2026-10-09T17:29:21.941781+00:00"
   },
   "PRP-0048": {
     "record_id": "PRP-0048",
@@ -2853,7 +2851,7 @@
       "fixtures/prep/UNIT-0048_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.138945+00:00"
+    "captured_at": "2026-10-09T17:29:21.974851+00:00"
   },
   "PRP-0049": {
     "record_id": "PRP-0049",
@@ -2955,7 +2953,7 @@
       "fixtures/prep/UNIT-0049_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.145055+00:00"
+    "captured_at": "2026-10-09T17:29:23.047937+00:00"
   },
   "PRP-0050": {
     "record_id": "PRP-0050",
@@ -3057,7 +3055,7 @@
       "fixtures/prep/UNIT-0050_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.151051+00:00"
+    "captured_at": "2026-10-09T17:29:23.070279+00:00"
   },
   "PRP-0051": {
     "record_id": "PRP-0051",
@@ -3159,7 +3157,7 @@
       "fixtures/prep/UNIT-0051_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.156949+00:00"
+    "captured_at": "2026-10-09T17:29:24.086963+00:00"
   },
   "PRP-0052": {
     "record_id": "PRP-0052",
@@ -3261,7 +3259,7 @@
       "fixtures/prep/UNIT-0052_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.163023+00:00"
+    "captured_at": "2026-10-09T17:29:24.107065+00:00"
   },
   "PRP-0053": {
     "record_id": "PRP-0053",
@@ -3363,7 +3361,7 @@
       "fixtures/prep/UNIT-0053_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.168949+00:00"
+    "captured_at": "2026-10-09T17:29:24.125735+00:00"
   },
   "PRP-0055": {
     "record_id": "PRP-0055",
@@ -3465,7 +3463,7 @@
       "fixtures/prep/UNIT-0055_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.191087+00:00"
+    "captured_at": "2026-10-09T17:29:25.164232+00:00"
   },
   "PRP-0058": {
     "record_id": "PRP-0058",
@@ -3567,7 +3565,7 @@
       "fixtures/prep/UNIT-0058_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.196596+00:00"
+    "captured_at": "2026-10-09T17:29:25.212704+00:00"
   },
   "PRP-0061": {
     "record_id": "PRP-0061",
@@ -3669,7 +3667,7 @@
       "fixtures/prep/UNIT-0061_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.202593+00:00"
+    "captured_at": "2026-10-09T17:29:25.271898+00:00"
   },
   "PRP-0063": {
     "record_id": "PRP-0063",
@@ -3771,7 +3769,7 @@
       "fixtures/prep/UNIT-0063_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.208144+00:00"
+    "captured_at": "2026-10-09T17:29:25.303481+00:00"
   },
   "PRP-0064": {
     "record_id": "PRP-0064",
@@ -3873,7 +3871,7 @@
       "fixtures/prep/UNIT-0064_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.214159+00:00"
+    "captured_at": "2026-10-09T17:29:25.323061+00:00"
   },
   "PRP-0065": {
     "record_id": "PRP-0065",
@@ -3975,7 +3973,7 @@
       "fixtures/prep/UNIT-0065_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.219167+00:00"
+    "captured_at": "2026-10-09T17:29:26.552894+00:00"
   },
   "PRP-0066": {
     "record_id": "PRP-0066",
@@ -4077,7 +4075,7 @@
       "fixtures/prep/UNIT-0066_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.225184+00:00"
+    "captured_at": "2026-10-09T17:29:26.576546+00:00"
   },
   "PRP-0068": {
     "record_id": "PRP-0068",
@@ -4179,7 +4177,7 @@
       "fixtures/prep/UNIT-0068_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.230190+00:00"
+    "captured_at": "2026-10-09T17:29:29.714396+00:00"
   },
   "PRP-0071": {
     "record_id": "PRP-0071",
@@ -4281,7 +4279,7 @@
       "fixtures/prep/UNIT-0071_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.236186+00:00"
+    "captured_at": "2026-10-09T17:29:29.835828+00:00"
   },
   "PRP-0073": {
     "record_id": "PRP-0073",
@@ -4383,7 +4381,7 @@
       "fixtures/prep/UNIT-0073_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.242714+00:00"
+    "captured_at": "2026-10-09T17:29:29.922019+00:00"
   },
   "PRP-0074": {
     "record_id": "PRP-0074",
@@ -4485,7 +4483,7 @@
       "fixtures/prep/UNIT-0074_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.248697+00:00"
+    "captured_at": "2026-10-09T17:29:29.966126+00:00"
   },
   "PRP-0075": {
     "record_id": "PRP-0075",
@@ -4587,7 +4585,7 @@
       "fixtures/prep/UNIT-0075_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.253716+00:00"
+    "captured_at": "2026-10-09T17:29:30.011249+00:00"
   },
   "PRP-0076": {
     "record_id": "PRP-0076",
@@ -4689,7 +4687,7 @@
       "fixtures/prep/UNIT-0076_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.259715+00:00"
+    "captured_at": "2026-10-09T17:29:30.059374+00:00"
   },
   "PRP-0077": {
     "record_id": "PRP-0077",
@@ -4791,7 +4789,7 @@
       "fixtures/prep/UNIT-0077_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.265697+00:00"
+    "captured_at": "2026-10-09T17:29:30.105195+00:00"
   },
   "PRP-0080": {
     "record_id": "PRP-0080",
@@ -4893,7 +4891,7 @@
       "fixtures/prep/UNIT-0080_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.270716+00:00"
+    "captured_at": "2026-10-09T17:29:30.222014+00:00"
   },
   "PRP-0081": {
     "record_id": "PRP-0081",
@@ -4995,7 +4993,7 @@
       "fixtures/prep/UNIT-0081_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.276727+00:00"
+    "captured_at": "2026-10-09T17:29:30.268651+00:00"
   },
   "PRP-0082": {
     "record_id": "PRP-0082",
@@ -5097,7 +5095,7 @@
       "fixtures/prep/UNIT-0082_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.282713+00:00"
+    "captured_at": "2026-10-09T17:29:32.388263+00:00"
   },
   "PRP-0084": {
     "record_id": "PRP-0084",
@@ -5199,7 +5197,7 @@
       "fixtures/prep/UNIT-0084_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.288699+00:00"
+    "captured_at": "2026-10-09T17:29:32.477177+00:00"
   },
   "PRP-0085": {
     "record_id": "PRP-0085",
@@ -5301,7 +5299,7 @@
       "fixtures/prep/UNIT-0085_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.294712+00:00"
+    "captured_at": "2026-10-09T17:29:32.529562+00:00"
   },
   "PRP-0088": {
     "record_id": "PRP-0088",
@@ -5403,7 +5401,7 @@
       "fixtures/prep/UNIT-0088_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.300699+00:00"
+    "captured_at": "2026-10-09T17:29:32.639950+00:00"
   },
   "PRP-0089": {
     "record_id": "PRP-0089",
@@ -5505,7 +5503,7 @@
       "fixtures/prep/UNIT-0089_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.306698+00:00"
+    "captured_at": "2026-10-09T17:29:32.694681+00:00"
   },
   "PRP-0090": {
     "record_id": "PRP-0090",
@@ -5607,7 +5605,7 @@
       "fixtures/prep/UNIT-0090_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.333191+00:00"
+    "captured_at": "2026-10-09T17:29:32.743916+00:00"
   },
   "PRP-0092": {
     "record_id": "PRP-0092",
@@ -5709,7 +5707,7 @@
       "fixtures/prep/UNIT-0092_label.jpg"
     ],
     "operator_id": "op_amira",
-    "captured_at": "2026-10-09T16:51:54.364359+00:00"
+    "captured_at": "2026-10-09T17:29:32.820172+00:00"
   },
   "PRP-0093": {
     "record_id": "PRP-0093",

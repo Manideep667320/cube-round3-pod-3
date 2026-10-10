@@ -32,7 +32,9 @@ def process_returns_request(request: dict) -> dict:
     r = sample_data.row("returns", subject_id, org_id)
 
     # Extract return attributes & previous evidence
-    record_id = r.get("record_id", f"RTN-{subject_id.replace('UNIT-', '')}")
+    base_record_id = r.get("record_id", f"RTN-{subject_id.replace('UNIT-', '')}")
+    req_id = request.get("request_id", "")
+    record_id = f"{base_record_id}-r{req_id.split(':r')[-1]}" if ":r" in req_id else base_record_id
     captured_at = r.get("captured_at", "2026-10-04T12:00:00Z")
     operator_id = r.get("operator_id", "op_returns")
     ordered_sku = r.get("ordered_sku", "")
@@ -42,7 +44,7 @@ def process_returns_request(request: dict) -> dict:
     parts_list_raw = r.get("parts_list", "")
     parts_missing_raw = r.get("parts_missing", "")
 
-    input_photos = photos(r)
+    input_photos = [p for p in (request.get("inputs") or []) if p.get("kind") in (None, "image") or str(p.get("ref", "")).lower().endswith((".jpg", ".jpeg", ".png", ".webp"))] or photos(r)
     evidence_refs = [p["ref"] for p in input_photos] or [f"fixtures/returns/{subject_id}_1.jpg"]
 
     expected_parts = [p.strip() for p in parts_list_raw.split(";") if p.strip()]

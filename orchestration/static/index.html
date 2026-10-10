@@ -1,0 +1,1969 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CUBE Pod-3 — the autonomous multi-agent intelligence layer for physical commerce operations.">
+  <meta name="theme-color" content="#eef2f9">
+  <meta name="color-scheme" content="light">
+  <title>CUBE // OS for Product Management</title>
+  <link rel="stylesheet" href="/static/styles.css?v=6.0">
+  <script>
+    // Self-Contained Core Router & UI Handlers - Synchronous & Bulletproof
+    window._heroIntroFinished = false;
+
+    window.revealHeroElements = function () {
+      if (window._heroIntroFinished) return;
+      window._heroIntroFinished = true;
+      document.body.classList.add('hero-intro-revealed');
+      var skipBtn = document.getElementById('heroIntroSkip');
+      if (skipBtn) {
+        skipBtn.style.opacity = '0';
+        setTimeout(function () {
+          if (skipBtn) skipBtn.style.display = 'none';
+        }, 400);
+      }
+    };
+
+    window.initHeroCinematicIntro = function () {
+      var vid = document.getElementById('heroPipelineVideo');
+      if (!vid) {
+        window.revealHeroElements();
+        return;
+      }
+
+      // Stop video from looping so it rests at the final frame
+      vid.loop = false;
+
+      // Event 1: Ended event fires when video reaches end
+      vid.addEventListener('ended', function () {
+        console.log('[Hero] Video reached end, pausing at last frame & revealing content');
+        try { vid.pause(); } catch(e){}
+        window.revealHeroElements();
+      });
+
+      // Event 2: timeupdate listener as a fast trigger right at the final frame
+      vid.addEventListener('timeupdate', function () {
+        if (vid.duration && vid.currentTime >= vid.duration - 0.25) {
+          try { vid.pause(); } catch(e){}
+          window.revealHeroElements();
+        }
+      });
+
+      // Event 3: Fallback timer (10.5 seconds max)
+      setTimeout(function () {
+        window.revealHeroElements();
+      }, 10500);
+
+      // Start video playback
+      var playPromise = vid.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(function (err) {
+          console.warn('[Hero] Autoplay restricted or failed, revealing content:', err);
+          window.revealHeroElements();
+        });
+      }
+    };
+
+    window.showToast = function (text) {
+      var toast = document.getElementById('toastMsg');
+      if (toast) {
+        toast.textContent = text;
+        toast.style.display = 'block';
+        clearTimeout(window._toastTimer);
+        window._toastTimer = setTimeout(function () { toast.style.display = 'none'; }, 2800);
+      }
+    };
+
+    window.switchRoute = function (routeId) {
+      if (!routeId) return;
+      console.log("[Router] Navigating to route:", routeId);
+
+      // Handle Landing Page vs Cockpit View Mode
+      if (routeId === 'landing') {
+        document.body.classList.add('mode-landing');
+        var pages = document.querySelectorAll('.view-page');
+        pages.forEach(function (page) { page.classList.remove('active'); });
+        var landingView = document.getElementById('view-landing');
+        if (landingView) landingView.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        if (window._heroIntroFinished) {
+          document.body.classList.add('hero-intro-revealed');
+        } else {
+          window.initHeroCinematicIntro();
+        }
+        return;
+      }
+
+      // Switching into Cockpit Views
+      document.body.classList.remove('mode-landing');
+
+      // 1. Toggle page views
+      var pages = document.querySelectorAll('.view-page');
+      pages.forEach(function (page) {
+        page.classList.remove('active');
+      });
+
+      var targetView = document.getElementById('view-' + routeId);
+      if (targetView) {
+        targetView.classList.add('active');
+      }
+
+      // 2. Toggle sidebar active item (only the first item matching the route)
+      var navItems = document.querySelectorAll('.nav-item');
+      var navActivated = false;
+      navItems.forEach(function (item) {
+        if (!navActivated && item.getAttribute('data-route') === routeId) {
+          item.classList.add('active');
+          navActivated = true;
+        } else {
+          item.classList.remove('active');
+        }
+      });
+
+      // 3. Scroll main viewport to top
+      var viewport = document.querySelector('.content-viewport');
+      if (viewport) {
+        viewport.scrollTop = 0;
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      window.showToast('Navigated to: ' + routeId.toUpperCase());
+    };
+
+    window.setViewerPhoto = function (stage, index) {
+      window.showToast('Viewing photo ' + (index + 1) + ' for ' + stage);
+    };
+
+    window.generateDossier = function () {
+      window.showToast('Generating SAFE-T Dispute Dossier...');
+      setTimeout(function () {
+        alert('SAFE-T Claim Dossier Generated:\n• Case ID: CASE-025-1182\n• Disputed Amount: $45.00 USD\n• Upstream Evidence Attached: PRP-0014 (Amazon Prep Rules 101-601 Verified)\n• Contradiction: Amazon Defect Fee refuted with cryptographic photo proof\n• Status: Ready for Amazon Seller Central Submission');
+        window.switchRoute('passport');
+      }, 500);
+    };
+
+    // Delegated click listener: ANY element with [data-route] will switch route immediately
+    document.addEventListener('click', function (e) {
+      var trigger = e.target.closest('[data-route]');
+      if (trigger) {
+        var route = trigger.getAttribute('data-route');
+        if (route) {
+          e.preventDefault();
+          window.switchRoute(route);
+        }
+      }
+    });
+
+    // Auto-detect Initial Route on Load
+    document.addEventListener('DOMContentLoaded', function () {
+      var initialRoute = 'landing';
+      if (window.location.hash) {
+        var h = window.location.hash.replace('#', '');
+        if (h && h !== 'landing') initialRoute = h;
+      } else if (window.location.pathname === '/cockpit') {
+        initialRoute = 'overview';
+      }
+      window.switchRoute(initialRoute);
+
+      if (initialRoute === 'landing') {
+        window.initHeroCinematicIntro();
+      } else {
+        window.revealHeroElements();
+      }
+    });
+
+    // Landing navbar readability: swap to a glass backdrop once scrolled past the hero video
+    window.addEventListener('scroll', function () {
+      var navWrap = document.querySelector('.landing-nav-wrap');
+      if (!navWrap) return;
+      navWrap.classList.toggle('is-scrolled', window.scrollY > 60);
+    }, { passive: true });
+  </script>
+</head>
+
+<body>
+
+  <!-- Left Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">▲</div>
+      <div>
+        <div class="logo-text">OS for</div>
+        <div class="logo-sub">Product Management</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-item nav-item-landing" data-route="landing">
+        <span class="nav-item-icon">🌐</span>
+        <span>Landing Page</span>
+      </div>
+      <div class="nav-item active" data-route="overview">
+        <span class="nav-item-icon">▦</span>
+        <span>Overview</span>
+      </div>
+      <div class="nav-item" data-route="overview">
+        <span class="nav-item-icon">⚡</span>
+        <span>Active Operations</span>
+      </div>
+      <div class="nav-item" data-route="passport">
+        <span class="nav-item-icon">📇</span>
+        <span>Product Passports</span>
+        <span class="nav-badge-pill">7</span>
+      </div>
+
+      <div class="nav-section-title">AGENTS</div>
+      <div class="nav-item" data-route="receiving">
+        <span class="nav-item-icon">📥</span>
+        <span>01 Receiving</span>
+      </div>
+      <div class="nav-item" data-route="prep">
+        <span class="nav-item-icon">🏷️</span>
+        <span>02 Prep</span>
+      </div>
+      <div class="nav-item" data-route="pack">
+        <span class="nav-item-icon">📦</span>
+        <span>03 Pack</span>
+      </div>
+      <div class="nav-item" data-route="returns">
+        <span class="nav-item-icon">🔄</span>
+        <span>04 Returns</span>
+      </div>
+      <div class="nav-item" data-route="recovery">
+        <span class="nav-item-icon">🛡️</span>
+        <span>05 Recovery</span>
+      </div>
+
+      <div class="nav-section-title">SYSTEM</div>
+      <div class="nav-item" data-route="passport">
+        <span class="nav-item-icon">⏱️</span>
+        <span>Event Timeline</span>
+      </div>
+      <div class="nav-item" data-route="overview">
+        <span class="nav-item-icon">📚</span>
+        <span>Evidence Library</span>
+      </div>
+      <div class="nav-item" data-route="returns">
+        <span class="nav-item-icon">📋</span>
+        <span>Review Queue</span>
+        <span class="nav-badge-pill" style="color: #b45309; background: #fef3c7;">6</span>
+      </div>
+      <div class="nav-item" data-route="prep">
+        <span class="nav-item-icon">⚖️</span>
+        <span>Rules & Requirements</span>
+      </div>
+      <div class="nav-item" data-route="overview">
+        <span class="nav-item-icon">⚙️</span>
+        <span>Settings</span>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- App Main Content Container -->
+  <div class="app-container">
+
+    <!-- Top App Header -->
+    <header class="app-header">
+      <div class="search-bar-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="globalSearch"
+          placeholder="Search by SKU, LPN, Order ID, RCV/PRP/PCK/RET/RCY ID...">
+      </div>
+
+      <div class="header-right">
+        <button class="btn btn-secondary btn-sm" data-route="landing" title="Back to Landing Page">
+          <span>🌐</span> Landing Page
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btnPairPhone">
+          <span>📱</span> Connect Phone Scanner
+        </button>
+        <button class="header-icon-btn" title="Notifications" data-route="overview">🔔</button>
+        <button class="header-icon-btn" title="Documentation" data-route="prep">📖</button>
+        <button class="header-icon-btn" title="Settings" data-route="overview">⚙️</button>
+        <div class="user-profile-pill" data-route="passport">
+          <div class="user-avatar">JD</div>
+          <div>
+            <div class="user-name">John Doe</div>
+            <div class="user-role">Warehouse Ops</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content Viewport -->
+    <main class="content-viewport">
+
+      <!-- ========================================== -->
+      <!-- VIEW 00: LANDING PAGE & VIDEO HERO         -->
+      <!-- ========================================== -->
+      <section class="view-page active" id="view-landing">
+
+        <!-- Floating Glass Island Navbar -->
+        <header class="landing-nav-wrap">
+          <nav class="landing-nav">
+            <div class="landing-brand" data-route="landing">
+              <div class="landing-brand-logo">▲</div>
+              <div>
+                <div class="landing-brand-title">CUBE // Pod-3</div>
+                <div class="landing-brand-subtitle">Autonomous Multi-Agent Commerce Engine</div>
+              </div>
+            </div>
+
+            <div class="landing-nav-links">
+              <a href="#sec-hero" class="landing-nav-link">Live Conveyor</a>
+              <a href="#sec-pillars" class="landing-nav-link">Architecture</a>
+              <a href="#sec-agents" class="landing-nav-link">5 Agents</a>
+              <a href="#sec-passport" class="landing-nav-link">Evidence Passport</a>
+              <a href="#sec-edge" class="landing-nav-link">Edge Vision</a>
+            </div>
+
+            <div class="landing-nav-actions">
+              <button class="btn-landing-primary" data-route="overview">
+                <span>Launch Cockpit</span>
+                <span class="btn-arrow-circle">↗</span>
+              </button>
+            </div>
+          </nav>
+        </header>
+
+        <!-- Hero Section with Background Video -->
+        <section class="landing-hero" id="sec-hero">
+          <!-- Background Video: Natural, Zero Filter, Stops at Last Frame -->
+          <video id="heroPipelineVideo" class="hero-bg-video" autoplay muted playsinline preload="auto"
+            poster="/static/public/video_preview.jpg">
+            <source src="/static/public/gemini_generated_video_39d5ed87.mp4" type="video/mp4">
+            Your browser does not support HTML5 video.
+          </video>
+
+          <!-- Skip Intro pill (accessible while video is running) -->
+          <button class="hero-intro-skip" id="heroIntroSkip" onclick="window.revealHeroElements()">
+            <span>Skip Intro</span>
+            <span>⏭</span>
+          </button>
+
+          <!-- Hero Content Foreground (Pops up and slides in when video stops at last frame) -->
+          <div class="hero-content-wrap">
+            <h1 class="hero-headline">
+              The Autonomous Intelligence Layer for <span class="headline-highlight">Physical Commerce Operations</span>.
+            </h1>
+
+            <p class="hero-sub">
+              Five coordinated AI vision agents continuously inspect inbound shipments, enforce Amazon FBA packaging
+              compliance, verify packing BOMs, catch return fraud with multi-modal visual comparison, and recover
+              chargeback revenue in real time.
+            </p>
+
+            <div class="hero-actions-row">
+              <button class="btn-landing-primary hero-main-cta" data-route="overview">
+                <span>Launch Live Operations Cockpit</span>
+                <span class="btn-arrow-circle">↗</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 1: The 4 Core Architectural Pillars -->
+        <section class="landing-section" id="sec-pillars">
+          <div style="text-align: center; margin-bottom: 48px;">
+            <span class="section-eyebrow">Enterprise Core Foundation</span>
+            <h2 class="section-title">Engineered for Physical Warehouse Realities</h2>
+            <p class="section-desc" style="margin: 0 auto;">
+              Traditional warehouse software depends on costly legacy handheld scanners and blind manual checkboxes.
+              CUBE Pod-3 converts any phone camera into an autonomous cryptographic inspection eye.
+            </p>
+          </div>
+
+          <div class="bento-pillars-grid">
+            <div class="bento-pillar-card">
+              <div>
+                <div class="bento-icon-box" style="background: rgba(219, 234, 254, 0.7); color: #2563eb;">📱</div>
+                <div class="bento-card-title">Zero Hardware Overhead</div>
+                <div class="bento-card-body">
+                  No $1,500 Zebra scanners required. Operators pair standard iOS/Android phones in seconds via QR code.
+                  Photos are streamed to backend AI via SSE in real time.
+                </div>
+              </div>
+              <div
+                style="margin-top: 18px; font-family: var(--font-mono); font-size: 11px; color: var(--accent-blue); font-weight: 600;">
+                100% PWA + HTML5 Camera
+              </div>
+            </div>
+
+            <div class="bento-pillar-card">
+              <div>
+                <div class="bento-icon-box" style="background: rgba(220, 252, 231, 0.7); color: #16a34a;">⚖️</div>
+                <div class="bento-card-title">Amazon Rules 101–601</div>
+                <div class="bento-card-body">
+                  Rigid automated verification of polybag suffocation warnings, FNSKU label placement, liquid
+                  double-seals, and barcode scannability before shipment handover.
+                </div>
+              </div>
+              <div
+                style="margin-top: 18px; font-family: var(--font-mono); font-size: 11px; color: var(--success); font-weight: 600;">
+                Zero FBA Defect Penalties
+              </div>
+            </div>
+
+            <div class="bento-pillar-card">
+              <div>
+                <div class="bento-icon-box" style="background: rgba(243, 232, 255, 0.7); color: #7c3aed;">🔐</div>
+                <div class="bento-card-title">Cryptographic Lineage</div>
+                <div class="bento-card-body">
+                  Every image captured generates an immutable SHA-256 fingerprint anchored to the unit's Product
+                  Passport in Neon PostgreSQL for non-repudiable audit trails.
+                </div>
+              </div>
+              <div
+                style="margin-top: 18px; font-family: var(--font-mono); font-size: 11px; color: #7c3aed; font-weight: 600;">
+                SHA-256 Evidence Ledger
+              </div>
+            </div>
+
+            <div class="bento-pillar-card">
+              <div>
+                <div class="bento-icon-box" style="background: rgba(254, 226, 226, 0.7); color: #dc2626;">🛡️</div>
+                <div class="bento-card-title">Automated SAFE-T Claims</div>
+                <div class="bento-card-body">
+                  When Amazon or buyers claim items arrived damaged or defective, the system correlates upstream Prep
+                  photos to automatically assemble airtight SAFE-T dispute dossiers.
+                </div>
+              </div>
+              <div
+                style="margin-top: 18px; font-family: var(--font-mono); font-size: 11px; color: var(--danger); font-weight: 600;">
+                Recover Disputed Revenue
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 2: The 5-Agent Interactive Deep Dive -->
+        <section class="landing-section" id="sec-agents" style="padding-top: 20px;">
+          <div style="text-align: center; margin-bottom: 48px;">
+            <span class="section-eyebrow">The Multi-Agent Orchestration</span>
+            <h2 class="section-title">Five Coordinated Vision Agents</h2>
+            <p class="section-desc" style="margin: 0 auto;">
+              Each agent specializes in a distinct physical milestone of the commerce lifecycle, sharing evidence
+              bundles and state updates over an asynchronous orchestrator.
+            </p>
+          </div>
+
+          <div class="agents-showcase-grid">
+            <!-- Agent 01 -->
+            <div class="agent-showcase-card">
+              <div>
+                <div class="agent-badge-row">
+                  <span class="agent-pill" style="background: #dbeafe; color: #1e40af;">STAGE 01 // DOCK</span>
+                  <span style="font-size: 18px;">📥</span>
+                </div>
+                <div class="agent-card-title">Inbound Receiving Agent</div>
+                <div class="agent-card-desc">
+                  Performs instant barcode OCR (GTIN, UPC, EAN), checks ASN delivery slips, audits physical carton
+                  condition, and records initial dock intake timestamps.
+                </div>
+                <div class="agent-metrics-box">
+                  <div style="color: var(--text-muted); font-size: 10px; margin-bottom: 4px;">ACTIVE SAMPLE RECORD:
+                  </div>
+                  <div style="display: flex; justify-content: space-between;"><span>Shipment
+                      ID:</span><strong>RCV-0014</strong></div>
+                  <div style="display: flex; justify-content: space-between;">
+                    <span>Barcode:</span><strong>GTIN-08493021</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span>Dock Status:</span><span
+                      style="color: var(--success); font-weight: 700;">PASS (VERIFIED)</span></div>
+                </div>
+              </div>
+              <button class="agent-card-btn" data-route="receiving">
+                <span>Open Receiving Manager</span>
+                <span>→</span>
+              </button>
+            </div>
+
+            <!-- Agent 02 -->
+            <div class="agent-showcase-card">
+              <div>
+                <div class="agent-badge-row">
+                  <span class="agent-pill" style="background: #dcfce7; color: #166534;">STAGE 02 // RULES 101–601</span>
+                  <span style="font-size: 18px;">🏷️</span>
+                </div>
+                <div class="agent-card-title">Prep Compliance Agent</div>
+                <div class="agent-card-desc">
+                  Enforces strict Amazon packaging mandates: polybag suffocation warning text for openings ≥ 5 inches,
+                  unobstructed flat FNSKU label placement, and double-sealed liquids.
+                </div>
+                <div class="agent-metrics-box">
+                  <div style="color: var(--text-muted); font-size: 10px; margin-bottom: 4px;">COMPLIANCE VERDICT:</div>
+                  <div style="display: flex; justify-content: space-between;"><span>Rule 101 (Suffocation):</span><span
+                      style="color: var(--success); font-weight: 700;">PASS</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span>Rule 201 (Barcode):</span><span
+                      style="color: var(--success); font-weight: 700;">PASS (SCANNABLE)</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span>Overall Verdict:</span><span
+                      style="color: var(--success); font-weight: 700;">OVERALL PASS</span></div>
+                </div>
+              </div>
+              <button class="agent-card-btn" data-route="prep">
+                <span>Open Prep Compliance Screen</span>
+                <span>→</span>
+              </button>
+            </div>
+
+            <!-- Agent 03 -->
+            <div class="agent-showcase-card">
+              <div>
+                <div class="agent-badge-row">
+                  <span class="agent-pill" style="background: #e0e7ff; color: #3730a3;">STAGE 03 // FULFILLMENT</span>
+                  <span style="font-size: 18px;">📦</span>
+                </div>
+                <div class="agent-card-title">Pack Verification Agent</div>
+                <div class="agent-card-desc">
+                  Validates order BOM item completeness, checks for required accessories, inspects dunnage cushioning,
+                  and verifies tamper-evident tape seal before carrier handoff.
+                </div>
+                <div class="agent-metrics-box">
+                  <div style="color: var(--text-muted); font-size: 10px; margin-bottom: 4px;">PACK AUDIT MANIFEST:</div>
+                  <div style="display: flex; justify-content: space-between;"><span>Item SKU:</span><strong>SKU-77102
+                      (1/1)</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span>Carton Box:</span><strong>Box #4
+                      (FBA Standard)</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span>Pack Status:</span><span
+                      style="color: var(--success); font-weight: 700;">READY TO SEAL</span></div>
+                </div>
+              </div>
+              <button class="agent-card-btn" data-route="pack">
+                <span>Open Pack Operations Screen</span>
+                <span>→</span>
+              </button>
+            </div>
+
+            <!-- Agent 04 -->
+            <div class="agent-showcase-card">
+              <div>
+                <div class="agent-badge-row">
+                  <span class="agent-pill" style="background: #fef3c7; color: #92400e;">STAGE 04 // COMPARATOR</span>
+                  <span style="font-size: 18px;">🔄</span>
+                </div>
+                <div class="agent-card-title">Returns Fraud Agent</div>
+                <div class="agent-card-desc">
+                  Performs pixel-level side-by-side visual comparison between the returned item and the pre-shipment
+                  Prep photo. Flags cosmetic damage, missing cords, or switched serials.
+                </div>
+                <div class="agent-metrics-box">
+                  <div style="color: var(--text-muted); font-size: 10px; margin-bottom: 4px;">COMPARISON RESULT:</div>
+                  <div style="display: flex; justify-content: space-between;"><span>Pre-Shipment:</span><span
+                      style="color: var(--success);">Clean (PRP-0014)</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span>Returned Unit:</span><span
+                      style="color: var(--danger);">Heavily Scratched</span></div>
+                  <div style="display: flex; justify-content: space-between;"><span>Condition Grade:</span><span
+                      style="color: var(--danger); font-weight: 700;">DEFECTIVE</span></div>
+                </div>
+              </div>
+              <button class="agent-card-btn" data-route="returns">
+                <span>Open Returns Comparator</span>
+                <span>→</span>
+              </button>
+            </div>
+
+            <!-- Agent 05 -->
+            <div class="agent-showcase-card">
+              <div>
+                <div class="agent-badge-row">
+                  <span class="agent-pill" style="background: #fee2e2; color: #991b1b;">STAGE 05 // REVENUE</span>
+                  <span style="font-size: 18px;">🛡️</span>
+                </div>
+                <div class="agent-card-title">Financial Recovery Agent</div>
+                <div class="agent-card-desc">
+                  Correlates upstream Prep and Pack photographic evidence to dispute unjustified Amazon defect fees and
+                  chargebacks, auto-generating a ready-to-submit SAFE-T dossier.
+                </div>
+                <div class="agent-metrics-box">
+                  <div style="color: var(--text-muted); font-size: 10px; margin-bottom: 4px;">DISPUTE DOSSIER STATUS:
+                  </div>
+                  <div style="display: flex; justify-content: space-between;"><span>Case
+                      Number:</span><strong>CASE-025-1182</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span>Charge
+                      Disputed:</span><strong>$45.00 USD</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span>Recommendation:</span><span
+                      style="color: var(--accent-blue); font-weight: 700;">CLAIM RECOMMENDED</span></div>
+                </div>
+              </div>
+              <button class="agent-card-btn" data-route="recovery">
+                <span>Open Recovery Dossier</span>
+                <span>→</span>
+              </button>
+            </div>
+
+            <!-- View All in Cockpit Card -->
+            <div class="agent-showcase-card"
+              style="background: linear-gradient(135deg, #1e293b, #0f172a); color: #ffffff;">
+              <div>
+                <div class="agent-badge-row">
+                  <span class="agent-pill" style="background: rgba(255,255,255,0.2); color: #ffffff;">ALL 5
+                    AGENTS</span>
+                  <span style="font-size: 18px;">🚀</span>
+                </div>
+                <div class="agent-card-title" style="color: #ffffff;">Live Multi-Agent Cockpit</div>
+                <div class="agent-card-desc" style="color: #cbd5e1;">
+                  Monitor all active warehouse operations simultaneously, review queue alerts, stream live camera
+                  photos, and inspect cryptographic product passports in real time.
+                </div>
+                <div class="agent-metrics-box"
+                  style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.15); color: #ffffff;">
+                  <div style="color: #94a3b8; font-size: 10px; margin-bottom: 4px;">SYSTEM HEALTH:</div>
+                  <div style="display: flex; justify-content: space-between;"><span>Neon DB:</span><strong
+                      style="color: #4ade80;">ONLINE</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span>SSE Stream:</span><strong
+                      style="color: #4ade80;">BROADCASTING</strong></div>
+                  <div style="display: flex; justify-content: space-between;"><span>Total Screens:</span><strong>7
+                      Specialized Views</strong></div>
+                </div>
+              </div>
+              <button class="agent-card-btn" data-route="overview" style="background: #ffffff; color: #0f172a;">
+                <span>Enter Operations Cockpit Now</span>
+                <span>↗</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 3: The Unified Product Evidence Passport -->
+        <section class="landing-section" id="sec-passport" style="padding-top: 20px;">
+          <div class="passport-banner-card">
+            <div>
+              <span class="section-eyebrow">Digital Product Passport</span>
+              <h2 class="section-title">Cryptographic Lifecycle Spine</h2>
+              <p class="section-desc" style="margin-bottom: 24px;">
+                Every unit processed through CUBE Pod-3 receives an immutable Product Passport. As the item flows from
+                Receiving to Pack to Return, every agent appends timestamped SHA-256 evidence records to the same
+                ledger.
+              </p>
+              <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px;">
+                <div
+                  style="background: rgba(255,255,255,0.8); border: 1px solid var(--border-light); padding: 8px 14px; border-radius: 10px;">
+                  <div style="font-size: 11px; color: var(--text-muted);">Demonstration SKU</div>
+                  <div style="font-weight: 700; font-family: var(--font-mono);">SKU-77102 (Wireless Headphones)</div>
+                </div>
+                <div
+                  style="background: rgba(255,255,255,0.8); border: 1px solid var(--border-light); padding: 8px 14px; border-radius: 10px;">
+                  <div style="font-size: 11px; color: var(--text-muted);">Tracking Serial</div>
+                  <div style="font-weight: 700; font-family: var(--font-mono);">SN-88421094-X</div>
+                </div>
+              </div>
+              <button class="btn-landing-primary" data-route="passport">
+                <span>Inspect Product Passport Screen</span>
+                <span class="btn-arrow-circle">↗</span>
+              </button>
+            </div>
+
+            <div
+              style="background: #ffffff; border: 1px solid var(--border-light); border-radius: 18px; padding: 20px; box-shadow: var(--glass-shadow-sm);">
+              <div
+                style="font-weight: 700; font-size: 13px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                <span>Event Lineage Chain</span>
+                <span class="pill pill-pass" style="font-size: 10px;">VERIFIED</span>
+              </div>
+              <div
+                style="display: flex; flex-direction: column; gap: 10px; font-size: 12px; font-family: var(--font-mono);">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                  <span style="color: var(--success);">✓</span>
+                  <span><strong>10:24 AM</strong> Dock Receiving Ingested</span>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                  <span style="color: var(--success);">✓</span>
+                  <span><strong>10:28 AM</strong> Rules 101–601 Pass (PRP-0014)</span>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                  <span style="color: var(--success);">✓</span>
+                  <span><strong>10:32 AM</strong> Box #4 Packed & Sealed</span>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                  <span style="color: var(--warning);">⚠</span>
+                  <span><strong>02:15 PM</strong> Customer Return Defect Flagged</span>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                  <span style="color: var(--accent-blue);">⚖</span>
+                  <span><strong>02:18 PM</strong> SAFE-T Dossier Generated ($45.00)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Section 4: Edge Vision Capture & Architecture -->
+        <section class="landing-section" id="sec-edge" style="padding-top: 20px;">
+          <div class="mobile-scanner-banner">
+            <div>
+              <span class="section-eyebrow">Edge Vision Ingestion</span>
+              <h2 class="section-title">Zero-Latency Visual Stream Architecture</h2>
+              <p class="section-desc" style="margin-bottom: 24px;">
+                Engineered for harsh warehouse environments with zero proprietary hardware overhead. The edge vision pipeline
+                captures high-resolution imagery at the pack bench, processes multi-modal inference via Gemini 3.5 Flash Vision,
+                and broadcasts live updates to the operations cockpit in under 800ms.
+              </p>
+
+              <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+                <div style="display: flex; gap: 12px; align-items: flex-start;">
+                  <span
+                    style="background: var(--accent-blue-subtle); color: var(--accent-blue); font-weight: 700; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px;">1</span>
+                  <div style="font-size: 13px;"><strong>High-Resolution Capture:</strong> Multi-angle image capture at Receiving, Prep, Pack, and Returns stations.</div>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: flex-start;">
+                  <span
+                    style="background: var(--accent-blue-subtle); color: var(--accent-blue); font-weight: 700; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px;">2</span>
+                  <div style="font-size: 13px;"><strong>Cryptographic Hashing:</strong> Every frame is stamped with an immutable SHA-256 fingerprint anchored to Neon PostgreSQL.</div>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: flex-start;">
+                  <span
+                    style="background: var(--accent-blue-subtle); color: var(--accent-blue); font-weight: 700; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px;">3</span>
+                  <div style="font-size: 13px;"><strong>Real-Time SSE Broadcast:</strong> Live event streaming pushes station results and review alerts across the cockpit simultaneously.</div>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-primary" data-route="overview">
+                  <span>Launch Operations Cockpit ↗</span>
+                </button>
+                <button class="btn btn-secondary" onclick="document.getElementById('btnPairPhone').click()">
+                  <span>📱 Connect Handheld Scanner</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Edge Telemetry Card -->
+            <div class="qr-box-landing">
+              <div style="font-weight: 700; font-size: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <span>EDGE STREAM TELEMETRY</span>
+                <span class="pill pill-pass" style="font-size: 10px;">ACTIVE 60 FPS</span>
+              </div>
+              <div style="background: #090d16; border-radius: 12px; padding: 16px; font-family: var(--font-mono); font-size: 11px; text-align: left; display: flex; flex-direction: column; gap: 9px; box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);">
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: #94a3b8;">Protocol:</span>
+                  <span style="color: #ffffff; font-weight: 600;">FastAPI SSE Broadcast</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: #94a3b8;">Stream Latency:</span>
+                  <span style="color: #4ade80; font-weight: 700;">38 ms (p95)</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: #94a3b8;">Vision Model:</span>
+                  <span style="color: #38bdf8;">Gemini 3.5 Flash</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: #94a3b8;">Database Engine:</span>
+                  <span style="color: #ffffff;">Neon PostgreSQL</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: #94a3b8;">Ledger Integrity:</span>
+                  <span style="color: #4ade80;">SHA-256 Verified</span>
+                </div>
+              </div>
+              <div style="margin-top: 14px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">
+                Autonomous Line Sensor Feed // Station 01-05
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Final CTA Banner -->
+        <section class="landing-section" style="padding-top: 10px; padding-bottom: 60px;">
+          <div class="landing-cta-banner">
+            <h2 class="cta-banner-title">Ready to Experience the Operations Cockpit?</h2>
+            <p class="cta-banner-sub">
+              Access all 7 operations screens matching the enterprise warehouse blueprint, review live queue alerts,
+              generate SAFE-T claims, and monitor real-time multi-agent activity.
+            </p>
+            <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;">
+              <button class="btn-landing-primary" data-route="overview"
+                style="background: #ffffff; color: #0f172a; font-size: 14px; padding: 12px 28px;">
+                <span>Launch Live Cockpit Now</span>
+                <span class="btn-arrow-circle"
+                  style="background: rgba(15,23,42,0.12); color: #0f172a; width: 26px; height: 26px;">↗</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Landing Footer -->
+        <footer class="landing-footer">
+          <div class="footer-inner">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div class="landing-brand-logo" style="width: 26px; height: 26px; font-size: 12px;">▲</div>
+              <span style="font-weight: 700; font-size: 12px;">CUBE Pod-3 // OS for Product Management</span>
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">
+              Powered by Neon PostgreSQL • Gemini 3.5 Flash Vision • FastAPI Server-Sent Events
+            </div>
+            <div style="display: flex; gap: 16px; font-size: 12px;">
+              <a href="#" data-route="overview"
+                style="color: var(--accent-blue); text-decoration: none; font-weight: 600;">Open Cockpit ↗</a>
+              <a href="#" data-route="passport"
+                style="color: var(--text-secondary); text-decoration: none; font-weight: 500;">Product Passports 📇</a>
+            </div>
+          </div>
+        </footer>
+
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 01: OPERATIONS OVERVIEW               -->
+      <!-- ========================================== -->
+      <section class="view-page" id="view-overview">
+        <div class="page-header-row">
+          <div class="page-title-group">
+            <h1>Autonomous Operations Cockpit 👋</h1>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Real-time multi-agent execution feed & unit states</div>
+          </div>
+          <div id="overviewLiveTimestamp" style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">
+            Connecting live stream...
+          </div>
+        </div>
+
+        <!-- 4 KPI Glass Cards (Clickable) -->
+        <div class="kpi-row">
+          <div class="kpi-card" data-route="receiving">
+            <div class="kpi-icon" style="background: rgba(219, 234, 254, 0.7); color: #2563eb;">📦</div>
+            <div>
+              <div class="kpi-val" id="kpiInProgress" style="color: #2563eb;">0</div>
+              <div class="kpi-label">In Progress (Receiving)</div>
+            </div>
+          </div>
+          <div class="kpi-card" data-route="returns">
+            <div class="kpi-icon" style="background: rgba(254, 243, 199, 0.7); color: #d97706;">⚠️</div>
+            <div>
+              <div class="kpi-val" id="kpiNeedsReview" style="color: #d97706;">0</div>
+              <div class="kpi-label">Needs Review (Returns)</div>
+            </div>
+          </div>
+          <div class="kpi-card" data-route="passport">
+            <div class="kpi-icon" style="background: rgba(220, 252, 231, 0.7); color: #16a34a;">✓</div>
+            <div>
+              <div class="kpi-val" id="kpiCompleted" style="color: #16a34a;">0</div>
+              <div class="kpi-label">Completed Units (Passports)</div>
+            </div>
+          </div>
+          <div class="kpi-card" data-route="recovery">
+            <div class="kpi-icon" style="background: rgba(254, 226, 226, 0.7); color: #dc2626;">⛔</div>
+            <div>
+              <div class="kpi-val" id="kpiBlocked" style="color: #dc2626;">0</div>
+              <div class="kpi-label">Blocked / Defect (Recovery)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Multi-Agent Provenance & Architecture Showcase (Judges Panel) -->
+        <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(255,255,255,0.92), rgba(248,250,252,0.85));">
+          <div class="card-title-bar" style="margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 16px;">🏆</span>
+              <span class="card-heading">Specialist Pod-3 Multi-Agent Federation</span>
+            </div>
+            <span style="font-size: 11px; font-weight: 600; color: var(--accent-blue); background: rgba(37,99,235,0.08); padding: 3px 9px; border-radius: 9999px; border: 1px solid rgba(37,99,235,0.15);">5 Authoritative Vision Engines</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;">
+            <!-- 01 Receiving -->
+            <div class="card" data-route="receiving" style="padding: 12px; cursor: pointer; transition: all 0.2s ease; border: 1px solid var(--border-light); background: rgba(255,255,255,0.8);">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                <span style="font-size: 20px;">📥</span>
+                <span class="pill pill-pass" style="font-size: 9px; padding: 1px 6px;">LIVE</span>
+              </div>
+              <div style="font-weight: 700; font-size: 12.5px; color: var(--text-primary);">01 Receiving</div>
+              <div style="font-size: 10.5px; color: var(--accent-blue); font-weight: 600; margin-bottom: 6px;">@gayathri2665</div>
+              <div style="font-size: 11px; color: var(--text-muted); line-height: 1.35;">4-State Physical Decider, OpenCV Quality + zxing-cpp Barcode, Intelligent Retake Coach.</div>
+            </div>
+            <!-- 02 Prep -->
+            <div class="card" data-route="prep" style="padding: 12px; cursor: pointer; transition: all 0.2s ease; border: 1px solid var(--border-light); background: rgba(255,255,255,0.8);">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                <span style="font-size: 20px;">🏷️</span>
+                <span class="pill pill-pass" style="font-size: 9px; padding: 1px 6px;">LIVE</span>
+              </div>
+              <div style="font-weight: 700; font-size: 12.5px; color: var(--text-primary);">02 Prep</div>
+              <div style="font-size: 10.5px; color: var(--accent-blue); font-weight: 600; margin-bottom: 6px;">@Manideep667320</div>
+              <div style="font-size: 11px; color: var(--text-muted); line-height: 1.35;">Amazon FBA Rules 101–601, Visual Grounding BBoxes, 1 Batched VLM (&lt;800ms P95).</div>
+            </div>
+            <!-- 03 Pack -->
+            <div class="card" data-route="pack" style="padding: 12px; cursor: pointer; transition: all 0.2s ease; border: 1px solid var(--border-light); background: rgba(255,255,255,0.8);">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                <span style="font-size: 20px;">📦</span>
+                <span class="pill pill-pass" style="font-size: 9px; padding: 1px 6px;">LIVE</span>
+              </div>
+              <div style="font-weight: 700; font-size: 12.5px; color: var(--text-primary);">03 Pack</div>
+              <div style="font-size: 10.5px; color: var(--accent-blue); font-weight: 600; margin-bottom: 6px;">@ayeshaxsa</div>
+              <div style="font-size: 11px; color: var(--text-muted); line-height: 1.35;">Deterministic Verification vs Vision Observation, Upstream Prep Gate Clearance.</div>
+            </div>
+            <!-- 04 Returns -->
+            <div class="card" data-route="returns" style="padding: 12px; cursor: pointer; transition: all 0.2s ease; border: 1px solid var(--border-light); background: rgba(255,255,255,0.8);">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                <span style="font-size: 20px;">🔄</span>
+                <span class="pill pill-warn" style="font-size: 9px; padding: 1px 6px;">LIVE</span>
+              </div>
+              <div style="font-weight: 700; font-size: 12.5px; color: var(--text-primary);">04 Returns</div>
+              <div style="font-size: 10.5px; color: var(--accent-blue); font-weight: 600; margin-bottom: 6px;">@Adithya-charan</div>
+              <div style="font-size: 11px; color: var(--text-muted); line-height: 1.35;">ReturnGuard AI, Hidden QR + Mobile OTP, RapidOCR/YOLOv8, Amazon Condition Scale.</div>
+            </div>
+            <!-- 05 Recovery -->
+            <div class="card" data-route="recovery" style="padding: 12px; cursor: pointer; transition: all 0.2s ease; border: 1px solid var(--border-light); background: rgba(255,255,255,0.8);">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                <span style="font-size: 20px;">🛡️</span>
+                <span class="pill pill-fail" style="font-size: 9px; padding: 1px 6px;">LIVE</span>
+              </div>
+              <div style="font-weight: 700; font-size: 12.5px; color: var(--text-primary);">05 Recovery</div>
+              <div style="font-size: 10.5px; color: var(--accent-blue); font-weight: 600; margin-bottom: 6px;">@saikiranpulagalla</div>
+              <div style="font-size: 11px; color: var(--text-muted); line-height: 1.35;">Cross-Agent Evidence Synthesis, Exact Decimal Ledger, SAFE-T Dispute Dossier.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions Ribbon (Clickable) -->
+        <div class="quick-actions-bar">
+          <button class="quick-action-btn" data-route="receiving"><span>📥</span> 01 Receiving</button>
+          <button class="quick-action-btn" data-route="prep"><span>🏷️</span> 02 Prep</button>
+          <button class="quick-action-btn" data-route="pack"><span>📦</span> 03 Pack</button>
+          <button class="quick-action-btn" data-route="returns"><span>🔄</span> 04 Returns</button>
+          <button class="quick-action-btn" data-route="recovery"><span>🛡️</span> 05 Recovery</button>
+        </div>
+
+        <div class="left-wide-grid">
+          <!-- Active Operations Table -->
+          <div class="card">
+            <div class="card-title-bar">
+              <span class="card-heading">Active Operations</span>
+              <a href="#" data-route="passport"
+                style="font-size: 11px; color: var(--accent-blue); text-decoration: none; font-weight: 600;">View all Passports →</a>
+            </div>
+            <div class="table-wrap">
+              <table class="ui-table">
+                <thead>
+                  <tr>
+                    <th>WORKFLOW ID</th>
+                    <th>UNIT ID</th>
+                    <th>CURRENT STAGE</th>
+                    <th>VERDICT</th>
+                    <th>STATUS</th>
+                    <th>UPDATED</th>
+                  </tr>
+                </thead>
+                <tbody id="overviewActiveOpsTableBody">
+                  <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 18px;">
+                      Loading real-time workflow operations...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Recent Events Feed (Clickable) -->
+          <div class="card">
+            <div class="card-title-bar">
+              <span class="card-heading">Recent Audit Events</span>
+            </div>
+            <div id="overviewRecentEventsList" style="display: flex; flex-direction: column; gap: 14px;">
+              <div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 18px;">
+                Waiting for event feed...
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 02: RECEIVING MANAGER                 -->
+      <!-- ========================================== -->
+      <section class="view-page" id="view-receiving">
+        <div class="breadcrumb-trail" id="receivingBreadcrumb">Receiving / ...</div>
+
+        <!-- Owner & Architecture Banner -->
+        <div class="agent-owner-banner">
+          <div class="agent-owner-tag">
+            <span style="font-size: 18px;">📥</span>
+            <span>Agent 01: Receiving Manager v2</span>
+            <span class="agent-owner-pill">Gayathri (@gayathri2665)</span>
+          </div>
+          <div class="agent-feature-chips">
+            <span class="feature-chip">⚡ 4-State Physical Actions</span>
+            <span class="feature-chip">🔍 OpenCV Quality + zxing-cpp</span>
+            <span class="feature-chip">🧭 coach.py Retake Assistant</span>
+            <span class="feature-chip">📊 91.4% Benchmark Accuracy</span>
+          </div>
+        </div>
+
+        <div class="page-header-row">
+          <div class="page-title-group">
+            <h1 id="receivingHeading" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <span>Inbound Dock Inspection</span>
+              <span id="receivingStatusBadge" class="pill pill-info">In Progress</span>
+              <span id="receivingPhysicalPill" class="pill pill-pass" style="font-size: 11px; padding: 2px 8px;">Physical Action: ACCEPT</span>
+            </h1>
+          </div>
+          <div class="btn-group">
+            <input type="file" id="uploadInput_receiving" accept="image/*" style="display: none;" onchange="window.handleDirectUpload(event, 'receiving')">
+            <button class="btn btn-secondary" onclick="document.getElementById('uploadInput_receiving').click()">📷 Upload Photo</button>
+            <button class="btn btn-secondary" onclick="window.triggerCoachDemo()">🧭 Retake Coach</button>
+            <button class="btn btn-primary" data-route="prep">Continue to Prep →</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 20px;">
+          <div class="card-heading" style="margin-bottom: 12px;">Shipment Manifest & Inbound Information</div>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+            <div class="meta-item"><span class="meta-label">Supplier</span><span class="meta-value" id="receivingSupplier">—</span></div>
+            <div class="meta-item"><span class="meta-label">Purchase Order</span><span class="meta-value" id="receivingPO">—</span></div>
+            <div class="meta-item"><span class="meta-label">Manifest Line</span><span class="meta-value" id="receivingManifestLine">—</span></div>
+            <div class="meta-item"><span class="meta-label">Expected Units</span><span class="meta-value" id="receivingExpectedUnits">—</span></div>
+            <div class="meta-item"><span class="meta-label">Observed Units</span><span class="meta-value" id="receivingObservedUnits">—</span></div>
+            <div class="meta-item"><span class="meta-label">Product / SKU</span><span class="meta-value" id="receivingSku">—</span></div>
+            <div class="meta-item"><span class="meta-label">LPN / Unit ID</span><span class="meta-value" id="receivingLPN" style="font-family: var(--font-mono);">—</span></div>
+            <div class="meta-item"><span class="meta-label">Inspection Timestamp</span><span class="meta-value" id="receivingDate">—</span></div>
+          </div>
+        </div>
+
+        <div class="left-wide-grid">
+          <!-- Left: Real Camera Photo Viewer + Diagnostics + Coach -->
+          <div>
+            <div class="card">
+              <div class="card-title-bar">
+                <span class="card-heading">Captured Inspection Photos</span>
+                <span id="receivingHashBadge" style="font-family: var(--font-mono); font-size: 11px; color: var(--accent-blue);">SHA-256 Verified</span>
+              </div>
+              <div class="image-viewer-frame" id="receivingImageFrame" style="position: relative; min-height: 280px; background: #0b1120; display: flex; align-items: center; justify-content: center; border-radius: 8px; overflow: hidden;">
+                <img id="receivingMainPhoto" src="" alt="Receiving unit capture" style="max-height: 380px; width: 100%; object-fit: contain; display: none;">
+                <div id="receivingPhotoPlaceholder" style="text-align: center; color: var(--text-muted); padding: 40px 20px;">
+                  <div style="font-size: 38px; margin-bottom: 10px;">📷</div>
+                  <div style="font-weight: 600; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;">No Photo Captured Yet</div>
+                  <div style="font-size: 12px; margin-bottom: 16px;">Open scanner on phone camera or snap photo to trigger Receiving Agent</div>
+                  <button class="btn btn-secondary btn-sm" onclick="document.getElementById('btnPairPhone').click()">📱 Connect Phone Scanner</button>
+                </div>
+                <div class="image-viewer-controls" id="receivingImageControls" style="display: none;">🔍 Live Camera Capture</div>
+              </div>
+              <div class="thumbnail-row" id="receivingThumbsRow" style="margin-top: 10px;">
+                <div class="thumb-box thumb-add" onclick="document.getElementById('btnPairPhone').click()">
+                  <span>📱</span> Phone Cam
+                </div>
+              </div>
+            </div>
+
+            <!-- OpenCV Quality & Perception Diagnostics (perception.py) -->
+            <div class="card" style="margin-top: 14px;">
+              <div class="card-title-bar">
+                <span class="card-heading">Perception Engine Diagnostics (OpenCV & zxing-cpp)</span>
+                <span style="font-size: 10.5px; color: var(--text-muted);">Real Metrics</span>
+              </div>
+              <div class="diagnostic-grid">
+                <div class="diagnostic-item">
+                  <div class="diagnostic-label">Blur (Laplacian)</div>
+                  <div class="diagnostic-val" id="diagBlurVal" style="color: #16a34a;">248.5 (OK)</div>
+                </div>
+                <div class="diagnostic-item">
+                  <div class="diagnostic-label">Glare Ratio</div>
+                  <div class="diagnostic-val" id="diagGlareVal" style="color: #16a34a;">0.02 (OK)</div>
+                </div>
+                <div class="diagnostic-item">
+                  <div class="diagnostic-label">Luminance</div>
+                  <div class="diagnostic-val" id="diagLumVal" style="color: #16a34a;">142.0 (Norm)</div>
+                </div>
+                <div class="diagnostic-item">
+                  <div class="diagnostic-label">Barcode Decoder</div>
+                  <div class="diagnostic-val" id="diagBcVal" style="color: var(--accent-blue);">zxing-cpp (GTIN)</div>
+                </div>
+              </div>
+
+              <!-- Intelligent Retake Coach (coach.py) -->
+              <div class="coach-box" id="coachCardBox">
+                <div class="coach-header">
+                  <span class="coach-title"><span>🧭</span> Retake Coach Advice (coach.py)</span>
+                  <span id="coachStatusPill" class="pill pill-pass" style="font-size: 10px;">OPTIMAL CAPTURE</span>
+                </div>
+                <div class="coach-msg" id="coachInstructionText">
+                  Photo sharpness and illumination meet quality thresholds. Barcode clearly decoded from label orientation. Zero retake necessary.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Real Inspection Results + Benchmark + Overrides -->
+          <div>
+            <div class="card">
+              <div class="card-title-bar">
+                <span class="card-heading">Authoritative Inspection Findings</span>
+                <span style="font-size: 11px; font-weight: 600; color: var(--text-muted);">rollup(checks)</span>
+              </div>
+              <div id="receivingChecklist" style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">
+                  Awaiting image input to execute inspection checks...
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-heading" style="margin-bottom: 8px;">Agent Explanation & Reasoning (explain.py)</div>
+              <div id="receivingNotes" style="font-size: 12px; color: var(--text-primary); line-height: 1.5; padding: 10px; background: rgba(255,255,255,0.7); border: 1px solid var(--border-light); border-radius: 8px; min-height: 70px;">
+                No reasoning available yet.
+              </div>
+            </div>
+
+            <!-- Benchmark Evaluation Card (eval.py) -->
+            <div class="benchmark-card">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 700; font-size: 12px; color: var(--text-primary);">Benchmark Accuracy (eval.py · n=100)</span>
+                <span class="pill pill-pass" style="font-size: 10px;">91.4% Overall</span>
+              </div>
+              <div class="benchmark-stats-row">
+                <div class="stat-badge">
+                  <div class="stat-badge-num">91.4%</div>
+                  <div class="stat-badge-lbl">Train (n=70)</div>
+                </div>
+                <div class="stat-badge">
+                  <div class="stat-badge-num">90.0%</div>
+                  <div class="stat-badge-lbl">Holdout (n=30)</div>
+                </div>
+                <div class="stat-badge">
+                  <div class="stat-badge-num">100%</div>
+                  <div class="stat-badge-lbl">Qty Mismatch</div>
+                </div>
+                <div class="stat-badge">
+                  <div class="stat-badge-num">100%</div>
+                  <div class="stat-badge-lbl">Identity Discrepancy</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Append-Only Human Override (service.py) -->
+            <div class="card" style="margin-top: 14px; background: rgba(255,255,255,0.85);">
+              <div class="card-heading" style="margin-bottom: 6px;">Append-Only Human Override</div>
+              <div style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 10px;">
+                Contract rule: overrides append outside the sealed cryptographic hash. Original perception findings remain permanently immutable in audit logs.
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary btn-sm" onclick="window.applyReceivingOverride('VISUAL_CHECK_OK')">✓ Visual Check OK</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.applyReceivingOverride('DOC_CORRECTED')">📄 Doc Corrected</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.applyReceivingOverride('SUPPLIER_APPROVED')">🏢 Supplier OK</button>
+              </div>
+            </div>
+
+            <div class="card" id="receivingBottomBanner" data-route="prep"
+              style="background: var(--success-subtle); border-color: var(--success-border); cursor: pointer; margin-top: 14px;">
+              <div id="receivingBannerTitle" style="font-weight: 700; color: #166534; font-size: 12px; margin-bottom: 4px;">Proceed to Prep →</div>
+              <div id="receivingBannerDesc" style="font-size: 11.5px; color: #15803d; line-height: 1.4;">Receiving completed. Click here to verify Amazon Prep Rules 101–601.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 03: PREP MANAGER                      -->
+            <!-- ========================================== -->
+      <!-- VIEW 03: PREP MANAGER                      -->
+      <!-- ========================================== -->
+      <section class="view-page" id="view-prep">
+        <div class="breadcrumb-trail" id="prepBreadcrumb">Prep / ...</div>
+
+        <!-- Owner & Architecture Banner -->
+        <div class="agent-owner-banner">
+          <div class="agent-owner-tag">
+            <span style="font-size: 18px;">🏷️</span>
+            <span>Agent 02: Prep Manager</span>
+            <span class="agent-owner-pill">Manideep (@Manideep667320)</span>
+          </div>
+          <div class="agent-feature-chips">
+            <span class="feature-chip">📜 Amazon Rules 101–601</span>
+            <span class="feature-chip">🎯 Visual Grounding BBoxes</span>
+            <span class="feature-chip">⚡ 1 Batched VLM (&lt;800ms)</span>
+            <span class="feature-chip">🚪 Cartonization Gate: ALLOW</span>
+          </div>
+        </div>
+
+        <div class="page-header-row">
+          <div class="page-title-group">
+            <h1 style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <span>Amazon FBA Inbound Prep Audit</span>
+              <span id="prepStatusBadge" class="pill pill-info">In Progress</span>
+              <span id="prepGatePill" class="pill pill-pass" style="font-size: 11px; padding: 2px 8px;">Gate: ALLOW (Pack Ready)</span>
+            </h1>
+          </div>
+          <div class="btn-group">
+            <input type="file" id="uploadInput_prep" accept="image/*" style="display: none;" onchange="window.handleDirectUpload(event, 'prep')">
+            <button class="btn btn-secondary" onclick="document.getElementById('uploadInput_prep').click()">📷 Upload Photo</button>
+            <button class="btn btn-secondary" id="btnToggleBBoxes" onclick="window.togglePrepBBoxes()">🎯 Toggle Grounding Boxes</button>
+            <button class="btn btn-primary" data-route="pack">Continue to Pack →</button>
+          </div>
+        </div>
+
+        <div class="meta-summary-card">
+          <div class="meta-item"><span class="meta-label">Linked Receiving</span><span class="meta-value" id="prepLinkedRec">—</span></div>
+          <div class="meta-item"><span class="meta-label">SKU</span><span class="meta-value" id="prepSku">—</span></div>
+          <div class="meta-item"><span class="meta-label">Work Order</span><span class="meta-value" id="prepWorkOrder">—</span></div>
+          <div class="meta-item"><span class="meta-label">FBA Shipment</span><span class="meta-value" id="prepFbaShipment">—</span></div>
+          <div class="meta-item"><span class="meta-label">FNSKU</span><span class="meta-value" id="prepFnsku">—</span></div>
+          <div class="meta-item"><span class="meta-label">Rule Set</span><span class="meta-value" id="prepRuleSet">Amazon Rules 101–601</span></div>
+          <div class="meta-item"><span class="meta-label">Inspector</span><span class="meta-value" id="prepOperator">—</span></div>
+          <div class="meta-item"><span class="meta-label">Timestamp</span><span class="meta-value" id="prepDate">—</span></div>
+        </div>
+
+        <div class="left-wide-grid">
+          <!-- Left: Real Prep Photo Viewer + Grounding BBoxes + Latency Card -->
+          <div>
+            <div class="card">
+              <div class="card-title-bar">
+                <span class="card-heading">Visual Grounding & Inspection Capture</span>
+                <span id="prepHashBadge" style="font-family: var(--font-mono); font-size: 11px; color: var(--accent-blue);">Amazon FBA Proof</span>
+              </div>
+              <div class="image-viewer-frame" id="prepImageFrame" style="position: relative; min-height: 280px; background: #0b1120; display: flex; align-items: center; justify-content: center; border-radius: 8px; overflow: hidden;">
+                <img id="prepMainPhoto" src="" alt="Prep unit photo" style="max-height: 380px; width: 100%; object-fit: contain; display: none;">
+                
+                <!-- SVG Visual Grounding Bounding Boxes Overlay (schemas.py / service.py) -->
+                <div class="bounding-box-overlay" id="prepBBoxOverlay" style="display: none;">
+                  <!-- Polybag Box -->
+                  <div class="grounding-box box-polybag" style="top: 15%; left: 10%; width: 78%; height: 72%;">
+                    <span class="grounding-box-label">Rule 101: Polybag Sealed (98.4%)</span>
+                  </div>
+                  <!-- Suffocation Warning Box -->
+                  <div class="grounding-box" style="top: 24%; left: 22%; width: 56%; height: 26%;">
+                    <span class="grounding-box-label" style="background: #16a34a;">Rule 201: Suffocation Warning (96.2%)</span>
+                  </div>
+                  <!-- FNSKU Box -->
+                  <div class="grounding-box box-fnsku" style="top: 56%; left: 32%; width: 36%; height: 24%;">
+                    <span class="grounding-box-label">Rule 301: FNSKU Flat (99.1%)</span>
+                  </div>
+                </div>
+
+                <div id="prepPhotoPlaceholder" style="text-align: center; color: var(--text-muted); padding: 40px 20px;">
+                  <div style="font-size: 38px; margin-bottom: 10px;">🏷️</div>
+                  <div style="font-weight: 600; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;">No Prep Photo Captured</div>
+                  <div style="font-size: 12px; margin-bottom: 16px;">Snap polybag & FNSKU photo via phone camera to inspect Amazon FBA compliance</div>
+                  <button class="btn btn-secondary btn-sm" onclick="document.getElementById('btnPairPhone').click()">📱 Connect Phone Scanner</button>
+                </div>
+                <div class="image-viewer-controls" id="prepImageControls" style="display: none;">🔍 Live Capture (Grounding Available)</div>
+              </div>
+              <div class="thumbnail-row" id="prepThumbsRow" style="margin-top: 10px;">
+                <div class="thumb-box thumb-add" onclick="document.getElementById('btnPairPhone').click()">
+                  <span>📱</span> Phone Cam
+                </div>
+              </div>
+            </div>
+
+            <!-- Latency, Unit Economics & Resilience Card (fail_open.py) -->
+            <div class="card" style="margin-top: 14px;">
+              <div class="card-title-bar">
+                <span class="card-heading">Engineering & Unit Economics (Rule 1 & 2)</span>
+                <span class="pill pill-pass" style="font-size: 10px;">P95 &lt; 800ms</span>
+              </div>
+              <div class="diagnostic-grid">
+                <div class="diagnostic-item">
+                  <div class="diagnostic-label">VLM Pipeline</div>
+                  <div class="diagnostic-val" style="color: var(--accent-blue);">1 Batched Call</div>
+                </div>
+                <div class="diagnostic-item">
+                  <div class="diagnostic-label">Inference Latency</div>
+                  <div class="diagnostic-val" style="color: #16a34a;">620ms (P95)</div>
+                </div>
+                <div class="diagnostic-item">
+                  <div class="diagnostic-label">Prep Service Fee</div>
+                  <div class="diagnostic-val">$0.65 USD</div>
+                </div>
+                <div class="diagnostic-item">
+                  <div class="diagnostic-label">Audit Cost</div>
+                  <div class="diagnostic-val" style="color: #16a34a;">$0.005 USD</div>
+                </div>
+              </div>
+              <div style="margin-top: 10px; font-size: 11.5px; color: var(--text-muted); line-height: 1.4;">
+                Protected by <code style="font-family: var(--font-mono); color: var(--accent-blue);">@fail_open_boundary</code> decorator: If network timeouts occur, degrades gracefully to review queue without halting conveyor belt.
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Preparation Requirements Table + Gate Clearance -->
+          <div>
+            <div class="card">
+              <div class="card-title-bar">
+                <span class="card-heading">Authoritative Amazon FBA Rules 101–601</span>
+                <span id="prepRulesCountBadge" style="font-family: var(--font-mono); font-size: 11px; color: var(--accent-blue);">Deterministic Engine</span>
+              </div>
+              <table class="ui-table">
+                <thead>
+                  <tr>
+                    <th>REQUIREMENT</th>
+                    <th>OBSERVATION / GROUNDING</th>
+                    <th>STATUS</th>
+                  </tr>
+                </thead>
+                <tbody id="prepRequirementsTableBody">
+                  <tr>
+                    <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                      Waiting for prep image inspection...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Upstream Cartonization Clearance Banner (pack_adapter.py) -->
+            <div class="card" id="prepOverallBox"
+              style="background: var(--success-subtle); border-color: var(--success-border); display: flex; align-items: center; justify-content: space-between; margin-top: 14px;">
+              <div>
+                <div id="prepOverallVerdictTitle" style="font-weight: 700; color: #166534; font-size: 13px;">VERDICT: PASS (Gate Status: ALLOW)</div>
+                <div id="prepOverallVerdictDesc" style="font-size: 11.5px; color: #15803d; margin-top: 2px;">Cartonization gate cleared for Agent 03 Pack. Photographed proof cached for Agent 05 Recovery.</div>
+              </div>
+              <button class="btn btn-primary btn-sm" data-route="pack">Continue to Pack →</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 04: PACK MANAGER                      -->
+      <!-- ========================================== -->
+      <!-- ========================================== -->
+      <!-- VIEW 04: PACK STATION (AYESHA)            -->
+      <!-- ========================================== -->
+      <section class="view-page" id="view-pack">
+        <div class="breadcrumb-trail" id="packBreadcrumb">Pack / ...</div>
+
+        <!-- Owner Attribution & Architectural Badge -->
+        <div class="agent-owner-banner">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="agent-owner-pill">Station Lead: Ayesha (@ayeshaxsa)</span>
+              <span style="font-size: 11px; font-weight: 700; color: #1e3a8a;">BOM Verification & Decision Boundary</span>
+            </div>
+            <div class="agent-feature-chips">
+              <span class="feature-chip">Vision Observes, Code Decides</span>
+              <span class="feature-chip">Deterministic BOM Verification</span>
+              <span class="feature-chip">Prep Gate Clearance (prep_adapter.py)</span>
+              <span class="feature-chip">Tripartite Check Engine</span>
+              <span class="feature-chip">Fail-Open Architecture</span>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 10px; color: var(--text-muted); font-weight: 600;">PHYSICAL ACTION</div>
+            <span id="packActionIndicator" class="pill pill-pass" style="font-size: 13px; font-weight: 800; padding: 4px 12px; margin-top: 2px; display: inline-block;">
+              SEAL CARTON
+            </span>
+          </div>
+        </div>
+
+        <div class="page-header-row">
+          <div class="page-title-group">
+            <h1>Order-to-Carton Verification <span id="packStatusBadge" class="pill pill-info">In Progress</span></h1>
+          </div>
+          <div class="btn-group">
+            <input type="file" id="uploadInput_pack" accept="image/*" style="display: none;" onchange="window.handleDirectUpload(event, 'pack')">
+            <button class="btn btn-secondary" onclick="document.getElementById('uploadInput_pack').click()">📷 Upload Photo</button>
+            <button class="btn btn-primary" data-route="returns">Continue to Returns →</button>
+          </div>
+        </div>
+
+        <div class="meta-summary-card">
+          <div class="meta-item"><span class="meta-label">Linked Prep</span><span class="meta-value" id="packLinkedPrep">—</span></div>
+          <div class="meta-item"><span class="meta-label">Order ID</span><span class="meta-value" id="packOrderId">—</span></div>
+          <div class="meta-item"><span class="meta-label">SKU</span><span class="meta-value" id="packSku">—</span></div>
+          <div class="meta-item"><span class="meta-label">Order Type</span><span class="meta-value" id="packOrderType">Standard FBA</span></div>
+          <div class="meta-item"><span class="meta-label">Items Count</span><span class="meta-value" id="packItemsCount">—</span></div>
+          <div class="meta-item"><span class="meta-label">Inspector</span><span class="meta-value" id="packOperator">—</span></div>
+          <div class="meta-item"><span class="meta-label">Timestamp</span><span class="meta-value" id="packDate">—</span></div>
+        </div>
+
+        <div class="left-wide-grid">
+          <!-- Left: Real Carton Image, Upstream Prep Gate, & Cartonization -->
+          <div>
+            <!-- Upstream Prep Clearance Gate Card -->
+            <div class="card" style="background: rgba(238, 242, 255, 0.7); border: 1px solid rgba(199, 210, 254, 0.9); margin-bottom: 14px;">
+              <div class="card-title-bar">
+                <span style="font-size: 12px; font-weight: 700; color: #3730a3;">Upstream Prep Clearance Gate (prep_adapter.py)</span>
+                <span class="pill pill-pass" id="packPrepGateStatus" style="font-size: 10.5px;">gate_status: ALLOW</span>
+              </div>
+              <div style="font-size: 11.5px; color: #4338ca; line-height: 1.4; margin-top: 4px;">
+                Verified upstream Prep record <code id="packPrepLinkedRef" style="font-family: var(--font-mono); font-weight: 600;">PRP-0014</code> — <code>ready_for_pack: true</code>. Polybag & FNSKU rules 101–601 cleared.
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title-bar">
+                <span class="card-heading">Carton Capture (Top View)</span>
+                <span id="packHashBadge" style="font-family: var(--font-mono); font-size: 11px; color: var(--accent-blue);">BOM Verification</span>
+              </div>
+              <div class="image-viewer-frame" id="packImageFrame" style="position: relative; min-height: 260px; background: #0b1120; display: flex; align-items: center; justify-content: center; border-radius: 8px; overflow: hidden;">
+                <img id="packMainPhoto" src="" alt="Packed carton photo" style="max-height: 340px; width: 100%; object-fit: contain; display: none;">
+                <div id="packPhotoPlaceholder" style="text-align: center; color: var(--text-muted); padding: 40px 20px;">
+                  <div style="font-size: 38px; margin-bottom: 10px;">📦</div>
+                  <div style="font-weight: 600; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;">No Pack Photo Captured</div>
+                  <div style="font-size: 12px; margin-bottom: 16px;">Snap top-view packing box photo to verify item contents and quantities</div>
+                  <button class="btn btn-secondary btn-sm" onclick="document.getElementById('btnPairPhone').click()">📱 Connect Phone Scanner</button>
+                </div>
+                <div class="image-viewer-controls" id="packImageControls" style="display: none;">🔍 Live Capture</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title-bar">
+                <span class="card-heading">Cartonization & Weights</span>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px;">
+                <div class="meta-item"><span class="meta-label">Carton ID</span><span class="meta-value" id="packCartonId">—</span></div>
+                <div class="meta-item"><span class="meta-label">Dimensions</span><span class="meta-value" id="packDimensions">12 x 10 x 8 in</span></div>
+                <div class="meta-item"><span class="meta-label">Weight</span><span class="meta-value" id="packWeight">4.2 lb</span></div>
+              </div>
+              <button class="btn btn-secondary btn-sm" style="width: 100%;" onclick="showToast('Printing Shipping Label & Barcode')">🖨️ Print Shipping Label</button>
+            </div>
+          </div>
+
+          <!-- Right: Order Items Verification & Tripartite Engine -->
+          <div>
+            <!-- Ayesha's Separation of Concerns & Tripartite Verification -->
+            <div class="card" style="background: rgba(248, 250, 252, 0.85); border: 1px solid var(--border-light); margin-bottom: 14px;">
+              <div class="card-title-bar">
+                <span style="font-size: 12px; font-weight: 700; color: var(--text-primary);">Tripartite BOM Verification Engine</span>
+                <span style="font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted);">Deterministic Matcher</span>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px;">
+                <div style="background: #ffffff; border: 1px solid var(--border-light); border-radius: 6px; padding: 8px; text-align: center;">
+                  <div style="font-size: 9.5px; color: var(--text-muted); font-weight: 700;">ITEMS PRESENT</div>
+                  <div id="packCheckPresent" style="font-size: 13px; font-weight: 800; color: #16a34a; margin-top: 2px;">✓ PASS</div>
+                </div>
+                <div style="background: #ffffff; border: 1px solid var(--border-light); border-radius: 6px; padding: 8px; text-align: center;">
+                  <div style="font-size: 9.5px; color: var(--text-muted); font-weight: 700;">QUANTITIES MATCH</div>
+                  <div id="packCheckQty" style="font-size: 13px; font-weight: 800; color: #16a34a; margin-top: 2px;">✓ 1/1 MATCH</div>
+                </div>
+                <div style="background: #ffffff; border: 1px solid var(--border-light); border-radius: 6px; padding: 8px; text-align: center;">
+                  <div style="font-size: 9.5px; color: var(--text-muted); font-weight: 700;">NO EXTRA ITEMS</div>
+                  <div id="packCheckExtra" style="font-size: 13px; font-weight: 800; color: #16a34a; margin-top: 2px;">✓ 0 UNEXPECTED</div>
+                </div>
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px; font-style: italic;">
+                * The VLM observer only records observed item descriptions and counts. All verdict branching (SEAL vs STOP_AND_FIX) is executed deterministically in code.
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-heading" style="margin-bottom: 12px;">Order Items Verification (Vision Observer)</div>
+              <table class="ui-table">
+                <thead>
+                  <tr>
+                    <th>ITEM IDENTITY</th>
+                    <th>EXPECTED</th>
+                    <th>OBSERVED</th>
+                    <th>RESULT</th>
+                  </tr>
+                </thead>
+                <tbody id="packOrderItemsTableBody">
+                  <tr>
+                    <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                      Waiting for pack verification...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div id="packVerificationNotice"
+                style="background: var(--success-subtle); border: 1px solid var(--success-border); border-radius: 8px; padding: 10px; margin-top: 14px; font-size: 12px; color: #166534; font-weight: 500;">
+                All items verified — No missing or extra items detected.
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-heading" style="margin-bottom: 12px;">Packing Inspection Checks</div>
+              <div id="packChecklistContainer" style="display: flex; flex-direction: column; gap: 8px; font-size: 12px;"></div>
+
+              <button class="btn btn-primary" data-route="returns" style="width: 100%; margin-top: 16px;">
+                Complete Packing →
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 05: RETURNS MANAGER (ADITHYA CHARAN)  -->
+      <!-- ========================================== -->
+      <section class="view-page" id="view-returns">
+        <div class="breadcrumb-trail" id="returnsBreadcrumb">Returns / ...</div>
+
+        <!-- Owner Attribution & Architectural Badge -->
+        <div class="agent-owner-banner">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="agent-owner-pill">Station Lead: Adithya Charan (@Adithya-charan)</span>
+              <span style="font-size: 11px; font-weight: 700; color: #1e3a8a;">ReturnGuard AI — QR-Based Fraud Prevention</span>
+            </div>
+            <div class="agent-feature-chips">
+              <span class="feature-chip">Hidden Single-Use QR Token</span>
+              <span class="feature-chip">Delivery Agent Mobile OTP</span>
+              <span class="feature-chip">RapidOCR (PP-OCRv4) + YOLOv8</span>
+              <span class="feature-chip">Amazon Published Condition Scale</span>
+              <span class="feature-chip">Evidence-Backed Disposition</span>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 10px; color: var(--text-muted); font-weight: 600;">DISPOSITION ENGINE</div>
+            <span id="returnsDispositionBadge" class="pill pill-pass" style="font-size: 13px; font-weight: 800; padding: 4px 12px; margin-top: 2px; display: inline-block;">
+              RESTOCK
+            </span>
+          </div>
+        </div>
+
+        <div class="page-header-row">
+          <div class="page-title-group">
+            <h1>Return Inspection <span id="returnsStatusBadge" class="pill pill-warn">Requires Review</span></h1>
+          </div>
+          <div class="btn-group">
+            <input type="file" id="uploadInput_returns" accept="image/*" style="display: none;" onchange="window.handleDirectUpload(event, 'returns')">
+            <button class="btn btn-secondary" onclick="document.getElementById('uploadInput_returns').click()">📷 Upload Photo</button>
+            <button class="btn btn-primary" data-route="recovery">Continue to Recovery →</button>
+          </div>
+        </div>
+
+        <!-- ReturnGuard 3-Step Security Stepper -->
+        <div class="card" style="background: rgba(248, 250, 252, 0.85); border: 1px solid var(--border-light); margin-bottom: 16px;">
+          <div class="card-title-bar">
+            <span style="font-size: 12px; font-weight: 700; color: var(--text-primary);">ReturnGuard AI 3-Step Cryptographic Handshake</span>
+            <span class="pill pill-pass" style="font-size: 10px;">Zero-Trust Chain</span>
+          </div>
+          <div class="security-stepper">
+            <div class="sec-step" style="border-color: #86efac; background: #f0fdf4;">
+              <div class="sec-step-num" style="background: #16a34a;">✓</div>
+              <div>
+                <div style="font-weight: 700; color: #166534; font-size: 11px;">1. Single-Use QR Token</div>
+                <div style="color: #15803d; font-size: 10px;">72h expiry, SHA-256 hashed</div>
+              </div>
+            </div>
+            <div class="sec-step" style="border-color: #86efac; background: #f0fdf4;">
+              <div class="sec-step-num" style="background: #16a34a;">✓</div>
+              <div>
+                <div style="font-weight: 700; color: #166534; font-size: 11px;">2. Mobile HMAC OTP</div>
+                <div style="color: #15803d; font-size: 10px;">Delivery agent phone verified</div>
+              </div>
+            </div>
+            <div class="sec-step" style="border-color: #93c5fd; background: #eff6ff;">
+              <div class="sec-step-num" style="background: #2563eb;">3</div>
+              <div>
+                <div style="font-weight: 700; color: #1e40af; font-size: 11px;">3. Multimodal CV Pipeline</div>
+                <div style="color: #2563eb; font-size: 10px;">RapidOCR + YOLOv8 + Qwen Vision</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="meta-summary-card">
+          <div class="meta-item"><span class="meta-label">Order ID</span><span class="meta-value" id="returnsOrderId">—</span></div>
+          <div class="meta-item"><span class="meta-label">Original Prep</span><span class="meta-value" id="returnsOriginalPrep">—</span></div>
+          <div class="meta-item"><span class="meta-label">Original Pack</span><span class="meta-value" id="returnsOriginalPack">—</span></div>
+          <div class="meta-item"><span class="meta-label">Return Reason</span><span class="meta-value" id="returnsReason" style="color: #dc2626;">Item damaged / Return</span></div>
+          <div class="meta-item"><span class="meta-label">Received Date</span><span class="meta-value" id="returnsDate">—</span></div>
+          <div class="meta-item"><span class="meta-label">Inspector</span><span class="meta-value" id="returnsInspector">—</span></div>
+          <div class="meta-item"><span class="meta-label">Recommended Disposition</span><span class="meta-value" id="returnsDisposition">—</span></div>
+        </div>
+
+        <!-- Returns Comparison Sub-Views -->
+        <div class="left-wide-grid">
+          <div>
+            <div class="card">
+              <div class="card-title-bar">
+                <span class="card-heading">Pre-Shipment Prep vs. Return Comparison</span>
+                <span id="returnsHashBadge" style="font-family: var(--font-mono); font-size: 11px; color: var(--accent-blue);">Visual Grounding</span>
+              </div>
+              <div class="comparison-container">
+                <div class="comparison-pane">
+                  <span class="meta-label">Pre-Shipment Proof (From Prep)</span>
+                  <div style="min-height: 160px; background: #0b1120; display: flex; align-items: center; justify-content: center; border-radius: 6px; overflow: hidden;">
+                    <img id="returnsOriginalPhoto" src="" alt="Original Prep" style="width: 100%; height: 160px; object-fit: contain; display: none;">
+                    <span id="returnsOriginalPhotoPlaceholder" style="color: var(--text-muted); font-size: 11px;">Awaiting Prep photo</span>
+                  </div>
+                </div>
+                <div class="comparison-pane">
+                  <span class="meta-label">Returned Unit (Phone Cam)</span>
+                  <div style="min-height: 160px; background: #0b1120; display: flex; align-items: center; justify-content: center; border-radius: 6px; overflow: hidden;">
+                    <img id="returnsReturnedPhoto" src="" alt="Returned item" style="width: 100%; height: 160px; object-fit: contain; display: none;">
+                    <span id="returnsReturnedPhotoPlaceholder" style="color: var(--text-muted); font-size: 11px;">Awaiting Return photo</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card-heading" style="margin-top: 16px; margin-bottom: 8px;">Amazon Published Condition Scale</div>
+              <div class="condition-grade-row" id="returnsConditionGradeRow">
+                <div class="grade-btn" id="gradeNew" onclick="setConditionGrade('New')">NEW</div>
+                <div class="grade-btn active" id="gradeLikeNew" onclick="setConditionGrade('Like New')">LIKE NEW</div>
+                <div class="grade-btn" id="gradeVeryGood" onclick="setConditionGrade('Very Good')">VERY GOOD</div>
+                <div class="grade-btn" id="gradeGood" onclick="setConditionGrade('Good')">GOOD</div>
+                <div class="grade-btn" id="gradeAcceptable" onclick="setConditionGrade('Acceptable')">ACCEPTABLE</div>
+                <div class="grade-btn" id="gradeDefective" onclick="setConditionGrade('Unsellable')">UNSELLABLE</div>
+              </div>
+            </div>
+
+            <!-- Accessory Completeness Tracking -->
+            <div class="card" style="margin-top: 14px;">
+              <div class="card-title-bar">
+                <span class="card-heading">Accessory & Component Completeness</span>
+                <span style="font-size: 11px; font-weight: 700; color: #16a34a;" id="returnsCompletenessSummary">3/4 Items Present</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; margin-top: 6px;">
+                <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border-light);">
+                  <span>Base Unit (BLUNT Umbrella)</span>
+                  <span style="color: #16a34a; font-weight: 700;">✓ Present</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border-light);">
+                  <span>Protective Fabric Sleeve</span>
+                  <span style="color: #16a34a; font-weight: 700;">✓ Present</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border-light);">
+                  <span>Warranty Card & Instructions</span>
+                  <span style="color: #16a34a; font-weight: 700;">✓ Present</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+                  <span>Original Polybag / Outer Packaging</span>
+                  <span style="color: #d97706; font-weight: 700;">⚠️ Discarded / Missing</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card">
+              <div class="card-heading" style="margin-bottom: 12px;">Authoritative Return Differences</div>
+              <div id="returnsDifferencesList" style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 20px;">
+                  Waiting for return inspection analysis...
+                </div>
+              </div>
+            </div>
+
+            <!-- Disposition Reasoning Engine -->
+            <div class="card" style="background: rgba(240, 253, 244, 0.7); border: 1px solid rgba(187, 247, 208, 0.9);">
+              <div class="card-title-bar">
+                <span style="font-size: 12px; font-weight: 700; color: #166534;">Evidence-Backed Disposition Engine</span>
+                <span class="pill pill-pass" id="dispositionRulePill" style="font-size: 10px;">Rule: RES-01</span>
+              </div>
+              <div id="dispositionExplanationText" style="font-size: 11.5px; color: #15803d; line-height: 1.4; margin-top: 4px;">
+                Condition evaluated as <strong>Like New</strong> with core components intact. Minor packaging wear only. Unit cleared for <strong>RESTOCK</strong> as Amazon Warehouse Deal or Direct Re-inventory.
+              </div>
+            </div>
+
+            <div class="card" id="returnsActionCard" data-route="recovery"
+              style="background: var(--accent-blue-subtle); border-color: var(--accent-blue-border); cursor: pointer; margin-top: 14px;">
+              <div style="font-weight: 700; color: #1e40af; font-size: 12px; margin-bottom: 4px;">Save return record & Auditing →</div>
+              <div style="font-size: 11.5px; color: #2563eb; line-height: 1.4;">Record added to Product Passport. Evidence forwarded to Recovery Manager for SAFE-T dispute evaluation.</div>
+              <button class="btn btn-primary btn-sm" data-route="recovery" style="margin-top: 10px;">Proceed to Recovery →</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 06: RECOVERY MANAGER (SAI KIRAN)      -->
+      <!-- ========================================== -->
+      <section class="view-page" id="view-recovery">
+        <div class="breadcrumb-trail" id="recoveryBreadcrumb">Recovery / ...</div>
+
+        <!-- Owner Attribution & Architectural Badge -->
+        <div class="agent-owner-banner">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="agent-owner-pill">Station Lead: Sai Kiran Pulagalla</span>
+              <span style="font-size: 11px; font-weight: 700; color: #1e3a8a;">Deterministic Dispute & Fee Recovery</span>
+            </div>
+            <div class="agent-feature-chips">
+              <span class="feature-chip">Cross-Agent Evidence Synthesis</span>
+              <span class="feature-chip">Exact Decimal Currency Arithmetic</span>
+              <span class="feature-chip">Defect Fee Contradiction Engine</span>
+              <span class="feature-chip">PostgreSQL RLS Tenant Isolation</span>
+              <span class="feature-chip">Cryptographic SAFE-T Dossier</span>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 10px; color: var(--text-muted); font-weight: 600;">CLAIM ELIGIBILITY</div>
+            <span id="recoveryEligibilityBadge" class="pill pill-pass" style="font-size: 13px; font-weight: 800; padding: 4px 12px; margin-top: 2px; display: inline-block;">
+              ✓ ACTIONABLE CLAIM
+            </span>
+          </div>
+        </div>
+
+        <div class="page-header-row">
+          <div class="page-title-group">
+            <h1>Chargeback & Defect Fee Investigation <span id="recoveryStatusBadge" class="pill pill-info">In Progress</span></h1>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="generateDossier()">Generate SAFE-T Dossier</button>
+          </div>
+        </div>
+
+        <div class="meta-summary-card">
+          <div class="meta-item"><span class="meta-label">Case ID</span><span class="meta-value" id="recoveryCaseId">—</span></div>
+          <div class="meta-item"><span class="meta-label">Charge Type</span><span class="meta-value" id="recoveryChargeType">—</span></div>
+          <div class="meta-item"><span class="meta-label">Disputed Fee</span><span class="meta-value" id="recoveryAmount" style="color: #2563eb;">—</span></div>
+          <div class="meta-item"><span class="meta-label">Claim Date</span><span class="meta-value" id="recoveryDate">—</span></div>
+          <div class="meta-item"><span class="meta-label">Status</span><span class="meta-value" id="recoveryStatusPill"><span class="pill pill-warn">Under Review</span></span></div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 28% 44% 28%; gap: 16px;">
+          <!-- Left: Linked Records & Cross-Agent Synthesis -->
+          <div class="card">
+            <div class="card-heading" style="margin-bottom: 12px;">Cross-Agent Evidence Synthesis</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">
+              Joins verified upstream records across all 4 stages on scope <code>UNIT-0014</code>:
+            </div>
+            <div id="recoveryLinkedRecordsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+          </div>
+
+          <!-- Middle: Charge Analysis & Contradiction Audit -->
+          <div class="card">
+            <div class="card-heading" style="margin-bottom: 12px;">Deterministic Defect Fee Audit</div>
+            
+            <!-- Contradiction Highlight Box -->
+            <div id="recoveryContradictionCard"
+              style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px; margin-bottom: 14px;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-weight: 800; color: #166534; font-size: 12px;">✓ CONTRADICTS AMAZON DEFECT CLAIM</span>
+                <span class="pill pill-pass" style="font-size: 10px;">Exact Decimal('$25.00')</span>
+              </div>
+              <div style="font-size: 11.5px; color: #15803d; line-height: 1.4; margin-top: 4px;">
+                Amazon FC charged <strong>$25.00</strong> claiming: <em>"Inbound Defect: Unbagged item missing suffocation warning"</em>. Upstream Prep record <strong>PRP-0014</strong> cryptographically refutes this with verified Rule 101/102 visual evidence.
+              </div>
+            </div>
+
+            <div id="recoveryAnalysisNotice"
+              style="background: var(--danger-subtle); border: 1px solid var(--danger-border); border-radius: 8px; padding: 10px; margin-bottom: 14px; font-size: 12px; color: #b91c1c;">
+              Evaluating prep and returns evidence...
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <span class="meta-label">Claimed Issue</span>
+              <div id="recoveryClaimedIssue" style="font-weight: 500; font-size: 12.5px; margin-top: 2px;">—</div>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+              <span class="meta-label">System Finding</span>
+              <div id="recoverySystemFinding" style="font-weight: 500; font-size: 12.5px; margin-top: 2px;">—</div>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--border-light);">
+              <div>
+                <span class="meta-label">Verdict:</span>
+                <span id="recoveryVerdictPill" class="pill pill-pass" style="font-size: 12px;">—</span>
+              </div>
+              <div>
+                <span class="meta-label">Net Recovery:</span>
+                <span style="font-family: var(--font-mono); font-weight: 800; color: #16a34a; font-size: 14px;">+$25.00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Evidence Gallery -->
+          <div class="card">
+            <div class="card-title-bar">
+              <span class="card-heading">Evidence Gallery</span>
+              <a href="#" data-route="passport" style="font-size: 11px; color: var(--accent-blue); text-decoration: none;">View Passport →</a>
+            </div>
+            <div id="recoveryEvidenceGallery" style="display: flex; flex-direction: column; gap: 10px;"></div>
+          </div>
+        </div>
+
+        <!-- Recovery Recommendation Banner -->
+        <div class="card" id="recoveryRecommendationBanner"
+          style="background: var(--accent-blue-subtle); border-color: var(--accent-blue-border); display: flex; align-items: center; justify-content: space-between; margin-top: 16px;">
+          <div>
+            <div id="recoveryRecommendationTitle" style="font-weight: 700; color: #1e40af; font-size: 13px;">RECOMMENDATION: CONTRADICTION DETECTED — RECOVER $25.00</div>
+            <div id="recoveryRecommendationDesc" style="font-size: 12px; color: #2563eb; margin-top: 2px;">Air-tight SAFE-T dossier synthesized from RCV-0014, PRP-0014, and PCK-0014 records.</div>
+          </div>
+          <button class="btn btn-primary" onclick="generateDossier()">Generate SAFE-T Dossier →</button>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 07: PRODUCT EVIDENCE PASSPORT         -->
+      <!-- ========================================== -->
+      <section class="view-page" id="view-passport">
+        <!-- Top Product Banner -->
+        <div class="card"
+          style="display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 56px; height: 56px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-light); background: #0b1120; display: flex; align-items: center; justify-content: center;">
+              <img id="passportHeaderPhoto" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+              <span id="passportHeaderPhotoPlaceholder" style="font-size: 22px;">📇</span>
+            </div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <h2 id="passportProductTitle" style="font-size: 16px; font-weight: 700;">UNIT-0014 Product Passport</h2>
+                <span id="passportHeaderStatusPill" class="pill pill-pass">Active</span>
+              </div>
+              <div id="passportHeaderSub" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                GTIN: B0DUMMY357 • Unit ID: UNIT-0014
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 24px;">
+            <div class="meta-item"><span class="meta-label">Current Stage</span><span class="meta-value" id="passportLocation">Receiving</span></div>
+            <div class="meta-item"><span class="meta-label">Total Records</span><span class="meta-value" id="passportTotalRecords">0</span></div>
+            <div class="meta-item"><span class="meta-label">Created</span><span class="meta-value" id="passportCreatedDate">—</span></div>
+            <div class="meta-item"><span class="meta-label">Last Updated</span><span class="meta-value" id="passportUpdatedDate">—</span></div>
+          </div>
+        </div>
+
+        <div class="left-wide-grid">
+          <!-- Left: Lifecycle Timeline -->
+          <div class="card">
+            <div class="card-title-bar">
+              <span class="card-heading">Cryptographic Lifecycle Timeline</span>
+              <span id="passportStagesTrackedCount" style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">5 Stages</span>
+            </div>
+
+            <div class="timeline-track-wrap">
+              <div id="passportTimelineContainer" class="timeline-flex"></div>
+            </div>
+          </div>
+
+          <!-- Right: Key Information Card -->
+          <div class="card">
+            <div class="card-title-bar">
+              <span class="card-heading">Key Information</span>
+              <button class="btn btn-secondary btn-sm" onclick="showToast('Displaying Lineage Graph Visualizer')">View Graph 📊</button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12px;">
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 6px;">
+                <span style="color: var(--text-muted);">Product Name</span>
+                <strong id="passportKeyProductName">—</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 6px;">
+                <span style="color: var(--text-muted);">SKU</span>
+                <strong id="passportKeySku" style="font-family: var(--font-mono);">—</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 6px;">
+                <span style="color: var(--text-muted);">GTIN / ASIN</span>
+                <strong id="passportKeyGtin" style="font-family: var(--font-mono);">—</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 6px;">
+                <span style="color: var(--text-muted);">Supplier</span>
+                <span id="passportKeySupplier">—</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 6px;">
+                <span style="color: var(--text-muted);">Organization</span>
+                <span id="passportKeyOrg">org_demo_alpha</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding-top: 4px;">
+                <span style="color: var(--text-muted);">Overall Status</span>
+                <span id="passportKeyStatus" class="pill pill-info">In Progress</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- SAFE-T Claim Dossier Modal -->
+  <div class="modal-overlay" id="safeTDossierModal" role="dialog" aria-modal="true" aria-labelledby="dossierModalTitle">
+    <div class="modal-content-card" style="max-width: 680px;">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid var(--border-light); padding-bottom: 12px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">🛡️</span>
+            <h2 id="dossierModalTitle" style="font-size: 16px; font-weight: 800; color: #1e3a8a; margin: 0;">Amazon SAFE-T Claim Evidence Dossier</h2>
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+            Deterministic Multi-Agent Evidence Synthesis · Generated by Sai Kiran's Recovery Engine
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeDossierModal()" style="font-size: 18px; border: none; background: transparent; cursor: pointer;">✕</button>
+      </div>
+
+      <!-- Dossier Metadata Grid -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #f8fafc; border: 1px solid var(--border-light); border-radius: 8px; padding: 12px; margin-bottom: 14px;">
+        <div>
+          <span style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Dispute Case ID</span>
+          <div style="font-family: var(--font-mono); font-size: 12.5px; font-weight: 800; color: #2563eb;">CASE-025-1182</div>
+        </div>
+        <div>
+          <span style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Disputed Fee (Amazon FC)</span>
+          <div style="font-family: var(--font-mono); font-size: 12.5px; font-weight: 800; color: #dc2626;">$25.00 USD</div>
+        </div>
+        <div>
+          <span style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Actionable Recovery</span>
+          <div style="font-family: var(--font-mono); font-size: 12.5px; font-weight: 800; color: #16a34a;">+$25.00 USD</div>
+        </div>
+        <div>
+          <span style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Target Unit Scope</span>
+          <div style="font-family: var(--font-mono); font-size: 11.5px; font-weight: 700;">UNIT-0014 (SHP-0014)</div>
+        </div>
+        <div>
+          <span style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">FNSKU / ASIN</span>
+          <div style="font-family: var(--font-mono); font-size: 11.5px; font-weight: 700;">X0021Z3ABC / B09XYZBLNT</div>
+        </div>
+        <div>
+          <span style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Audit Result</span>
+          <span class="pill pill-pass" style="font-size: 10px;">✓ CONTRADICTED</span>
+        </div>
+      </div>
+
+      <!-- Formal Contradiction Statement -->
+      <div style="margin-bottom: 14px;">
+        <div style="font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; text-transform: uppercase;">Dispute Contradiction Statement:</div>
+        <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; padding: 10px 12px; font-size: 11.5px; color: #166534; line-height: 1.5;">
+          Amazon FC BWI2 assessed a <strong>$25.00 Defect Penalty</strong> citing <em>"Unbagged product / Missing suffocation warning"</em>. 
+          This charge is <strong>deterministically refuted</strong>. Upstream station <strong>PRP-0014</strong> captured cryptographic visual evidence prior to shipment handover proving full compliance with Amazon FBA Rules 101 & 102 (Polybag sealed + suffocation warning present in &gt;10pt font).
+        </div>
+      </div>
+
+      <!-- Cryptographic Cross-Agent Evidence Chain -->
+      <div style="margin-bottom: 14px;">
+        <div style="font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; text-transform: uppercase;">Cross-Agent Evidence Synthesis Chain:</div>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid var(--border-light); border-radius: 6px; padding: 6px 10px;">
+            <div><strong>01 Receiving:</strong> <code>RCV-0014</code> — Inbound delivery matched manifest (Gayathri's 91.4% CV accuracy).</div>
+            <span class="pill pill-pass" style="font-size: 9.5px;">ACCEPT</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid var(--border-light); border-radius: 6px; padding: 6px 10px;">
+            <div><strong>02 Prep:</strong> <code>PRP-0014</code> — Rules 101-601 verified, visual grounding bounding boxes attached.</div>
+            <span class="pill pill-pass" style="font-size: 9.5px;">PASS (Rule 101/102)</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid var(--border-light); border-radius: 6px; padding: 6px 10px;">
+            <div><strong>03 Pack:</strong> <code>PCK-0014</code> — Tripartite BOM verification cleared, prep gate status <code>ALLOW</code>.</div>
+            <span class="pill pill-pass" style="font-size: 9.5px;">SEAL</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid var(--border-light); border-radius: 6px; padding: 6px 10px;">
+            <div><strong>04 Returns:</strong> <code>RTN-0014</code> — 3-step security check passed, condition classified as Like New.</div>
+            <span class="pill pill-pass" style="font-size: 9.5px;">RESTOCK</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; border-top: 1px solid var(--border-light); padding-top: 12px;">
+        <button class="btn btn-secondary btn-sm" onclick="copyDossierText()">📋 Copy Dispute Letter</button>
+        <button class="btn btn-secondary btn-sm" onclick="copyDossierJson()">📦 Copy JSON Payload</button>
+        <button class="btn btn-primary btn-sm" onclick="submitDossierToSellerCentral()">🚀 Submit to Amazon Seller Central</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pair Phone QR Modal -->
+  <div class="modal-overlay" id="qrModal" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="modal-head-icon">📱</div>
+        <div class="modal-head-text">
+          <span class="modal-title" id="qrModalTitle">Connect Handheld Phone Scanner</span>
+          <span class="modal-sub">Live edge-vision capture pairing</span>
+        </div>
+        <button class="modal-close" id="btnCloseQr" aria-label="Close">✕</button>
+      </div>
+      <p class="modal-desc">
+        Scan this QR code with your smartphone camera to launch the operator scanner.
+      </p>
+      <div class="qr-frame">
+        <img src="/api/scanner-qr" alt="QR Code">
+      </div>
+      <div class="qr-hint" id="qrUrlHint">
+        http://192.168.29.106:8100/scanner
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Msg -->
+  <div id="toastMsg" class="toast" role="status" aria-live="polite">
+    Notification
+  </div>
+
+  <script src="/static/cockpit.js?v=5.0"></script>
+</body>
+
+</html>

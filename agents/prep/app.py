@@ -40,7 +40,7 @@ def handle(request: dict[str, Any]) -> dict[str, Any]:
 
     # Extract photos from request or certified sample row
     sample_row = sample_data.row("prep", subject_id, org_id)
-    input_photos = photos(sample_row)
+    input_photos = request.get("inputs") or photos(sample_row)
     photo_refs = [p["ref"] for p in input_photos]
 
     # 2. Execute authoritative Prep Manager engine (inspect_prepped_unit)
@@ -81,10 +81,14 @@ def handle(request: dict[str, Any]) -> dict[str, Any]:
     outcome = {"PASS": "compliant", "FAIL": "non_compliant", "UNCERTAIN": "pending_review"}.get(verdict, "pending_review")
 
     # 4. Build immutable Evidence Record
+    base_rid = prep_record.record_id
+    req_id = request.get("request_id", "")
+    rid = f"{base_rid}-r{req_id.split(':r')[-1]}" if ":r" in req_id else base_rid
+
     record = build_record(
         request,
         agent_id=AGENT_ID,
-        record_id=prep_record.record_id,
+        record_id=rid,
         captured_at=prep_record.captured_at,
         operator_id=prep_record.operator_id,
         refs={
