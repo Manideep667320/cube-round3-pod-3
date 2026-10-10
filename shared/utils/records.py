@@ -49,6 +49,16 @@ def rollup(checks: list[dict]) -> str:
     return "PASS"
 
 
+def _sanitize_model(model: Any) -> dict:
+    if not isinstance(model, dict):
+        return {"name": "rules", "version": "1.0", "calls": 0}
+    allowed = {"name", "version", "provider", "prompt_version", "calls", "cost_usd"}
+    clean = {k: v for k, v in model.items() if k in allowed}
+    clean.setdefault("name", str(model.get("name") or "rules"))
+    clean.setdefault("version", str(model.get("version") or "1.0"))
+    return clean
+
+
 def build_record(request: dict, *, agent_id: str, record_id: str, captured_at: str, checks: list[dict], outcome: str,
                  reason: str, model: dict, unit_scope: str = "unit", refs: dict | None = None,
                  status: str = "completed", operator_id: str | None = None, inputs: list[dict] | None = None,
@@ -56,6 +66,7 @@ def build_record(request: dict, *, agent_id: str, record_id: str, captured_at: s
                  confidence: float | None = None, needs_human: bool | None = None, error: dict | None = None,
                  latency_ms: int | None = None, client_id: str | None = None) -> dict:
     """An Evidence Record for the stage/workflow/subject named in `request` (an Agent Input)."""
+    model = _sanitize_model(model)
     verdict = verdict or rollup(checks)
     s = request["subject"]
     record: dict[str, Any] = {

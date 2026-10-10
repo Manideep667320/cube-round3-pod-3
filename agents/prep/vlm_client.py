@@ -3,6 +3,7 @@
 import json
 import logging
 import asyncio
+import os
 from pathlib import Path
 from agents.prep.config import settings
 from agents.prep.schemas import WorkOrder, BatchedVLMPayload
@@ -95,23 +96,39 @@ class BatchedVLMClient:
 
     async def _call_remote_vlm(self, photo_refs: list[str], wo: WorkOrder) -> BatchedVLMPayload:
         """Genuine VLM invocation via Google Gemini or OpenAI API with fail-open fallback."""
-        if not settings.vlm_api_key:
+        prep_key = os.environ.get("PREP_API_KEY") or settings.vlm_api_key or os.environ.get("GEMINI_API_KEY", "")
+        if not prep_key:
             logger.info("No VLM API key configured; falling back to deterministic inspection.")
             return self._mock_inference(wo, photo_refs)
 
+        prep_provider = (os.environ.get("PREP_VLM_PROVIDER") or self.provider).lower()
         try:
-            if self.provider in ("gemini", "google"):
+            if prep_provider in ("gemini", "google"):
                 return await asyncio.wait_for(
                     self._call_gemini(photo_refs, wo),
                     timeout=max(self.timeout, 5.0)
                 )
-            elif self.provider in ("openai", "gpt"):
+            elif prep_provider in ("openai", "gpt"):
                 return await asyncio.wait_for(
                     self._call_openai(photo_refs, wo),
                     timeout=max(self.timeout, 5.0)
                 )
+            elif prep_provider in ("grok", "xai"):
+                key = os.environ.get("PREP_API_KEY") or os.environ.get("GROK_API_KEY") or os.environ.get("XAI_API_KEY") or ""
+                m = os.environ.get("PREP_MODEL") or "grok-2-vision-1212"
+                return await asyncio.wait_for(
+                    self._call_openai(photo_refs, wo, base_url="https://api.x.ai/v1", api_key=key, model=m),
+                    timeout=max(self.timeout, 5.0)
+                )
+            elif prep_provider == "groq":
+                key = os.environ.get("PREP_API_KEY") or os.environ.get("GROQ_API_KEY") or ""
+                m = os.environ.get("PREP_MODEL") or os.environ.get("GROQ_VISION_MODEL") or "qwen/qwen3.8-27b"
+                return await asyncio.wait_for(
+                    self._call_openai(photo_refs, wo, base_url="https://api.groq.com/openai/v1", api_key=key, model=m),
+                    timeout=max(self.timeout, 5.0)
+                )
             else:
-                logger.warning(f"Unknown VLM provider '{self.provider}'; using deterministic inference.")
+                logger.warning(f"Unknown VLM provider '{prep_provider}'; using deterministic inference.")
                 return self._mock_inference(wo, photo_refs)
         except Exception as exc:
             # Rule 3: Fail Open - network errors, quota limits, or invalid keys never crash the station
@@ -123,7 +140,8 @@ class BatchedVLMClient:
         import google.genai as genai
         from google.genai import types
 
-        api_key = settings.vlm_api_key or os.environ.get("GEMINI_API_KEY", "")
+        api_key = os.environ.get("PREP_API_KEY") or settings.vlm_api_key or os.environ.get("GEMINI_API_KEY", "")
+        model_name = os.environ.get("PREP_MODEL") or os.environ.get("MODEL_NAME") or settings.vlm_model
         client = genai.Client(api_key=api_key)
         prompt_text = (
             f"{BATCHED_INSPECTION_SYSTEM_PROMPT}\n\n"
@@ -175,12 +193,19 @@ class BatchedVLMClient:
         parsed = json.loads(raw_text)
         return BatchedVLMPayload.model_validate(parsed)
 
-    async def _call_openai(self, photo_refs: list[str], wo: WorkOrder) -> BatchedVLMPayload:
-        """Call OpenAI API with multimodal base64 inputs and structured response."""
+    async def _call_openai(self, photo_refs: list[str], wo: WorkOrder, base_url: str | None = None, api_key: str | None = None, model: str = "gpt-4o-mini") -> BatchedVLMPayload:
+        """Call OpenAI or compatible API (Grok/Groq) with multimodal base64 inputs."""
         import base64
         import openai
 
-        client = openai.AsyncOpenAI(api_key=settings.vlm_api_key)
+        effective_key = api_key or os.environ.get("PREP_API_KEY") or settings.vlm_api_key or os.environ.get("OPENAI_API_KEY", "")
+        if not effective_key:
+            return self._mock_inference(wo, photo_refs)
+
+        kwargs = {"api_key": effective_key}
+        if base_url:
+            kwargs["base_url"] = base_url
+        client = openai.AsyncOpenAI(**kwargs)
         user_content: list[dict] = [
             {"type": "text", "text": f"Unit ID: {wo.unit_id}, SKU: {wo.sku}, ASIN: {wo.asin}, FNSKU: {wo.fnsku}"}
         ]
@@ -209,7 +234,7 @@ class BatchedVLMClient:
         ]
 
         resp = await client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=model,
             messages=messages,
             response_format={"type": "json_object"},
             temperature=0.1

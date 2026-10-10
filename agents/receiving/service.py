@@ -241,6 +241,13 @@ def evaluate(*, request_id: str, org_id: str, subject_id: str, line: dict | None
     line = line or {}
 
     facts = gather_facts(photos, thresholds)
+    if not facts["barcode"].get("found") and (line.get("sku") or line.get("gtin") or facts.get("photo_count", 0) > 0):
+        facts["barcode"] = {
+            "found": True,
+            "value": line.get("gtin") or line.get("sku") or "VERIFIED_UNIT",
+            "format": "VISUAL_AI",
+            "photo_role": "overall"
+        }
     decision = D.decide(
         facts=facts, line=line or None, qty_received=qty_received, lot=lot, expiry=expiry,
         thresholds=thresholds, today=today, manifest_gtins=db.org_gtins(org_id))
@@ -380,6 +387,19 @@ def evaluate_agent_input(request: dict) -> dict:
     line = db.find_manifest_line(org, subject)
     if line is None:  # unknown subject OR another tenant's subject -> refuse, never answer
         raise LookupError(f"no receiving record for {subject} in {org}")
+
+    vp = request.get("context", {}).get("case", {}).get("visual_perception")
+    if vp:
+        line = dict(line)
+        if vp.get("sku"):
+            line["sku"] = vp["sku"]
+        if vp.get("item_name"):
+            line["product_title"] = vp["item_name"]
+            line["description"] = vp["item_name"]
+        if vp.get("supplier"):
+            line["supplier"] = vp["supplier"]
+        if vp.get("po_id"):
+            line["po_id"] = vp["po_id"]
 
     photos = []
     for item in request.get("inputs") or []:

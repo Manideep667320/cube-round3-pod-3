@@ -24,6 +24,9 @@ def load_image(path: str) -> np.ndarray | None:
     if data.size == 0:
         return None
     img = cv2.imdecode(data, cv2.IMREAD_COLOR)
+    if img is not None and max(img.shape[:2]) > 1200:
+        scale = 1200.0 / max(img.shape[:2])
+        img = cv2.resize(img, (int(img.shape[1] * scale), int(img.shape[0] * scale)), interpolation=cv2.INTER_AREA)
     return img
 
 
@@ -51,9 +54,10 @@ def _variants(img: np.ndarray) -> list[np.ndarray]:
     """Original first, then an upscaled+sharpened grayscale pass for small/faded codes."""
     out = [img]
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    big = cv2.resize(gray, None, fx=2.0, fy=2.0, interpolation=cv2.INTER_CUBIC)
-    sharpened = cv2.addWeighted(big, 1.8, cv2.GaussianBlur(big, (0, 0), 1.2), -0.8, 0)
-    out.append(cv2.cvtColor(sharpened, cv2.COLOR_GRAY2BGR))
+    if max(img.shape[:2]) < 800:
+        big = cv2.resize(gray, None, fx=1.5, fy=1.5, interpolation=cv2.INTER_LINEAR)
+        sharpened = cv2.addWeighted(big, 1.5, cv2.GaussianBlur(big, (0, 0), 1.0), -0.5, 0)
+        out.append(cv2.cvtColor(sharpened, cv2.COLOR_GRAY2BGR))
     return out
 
 

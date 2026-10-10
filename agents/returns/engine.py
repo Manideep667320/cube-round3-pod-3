@@ -44,6 +44,19 @@ def process_returns_request(request: dict) -> dict:
     parts_list_raw = r.get("parts_list", "")
     parts_missing_raw = r.get("parts_missing", "")
 
+    vp = request.get("context", {}).get("case", {}).get("visual_perception")
+    if not vp:
+        for ev in reversed(request.get("previous_evidence") or []):
+            pl = ev.get("payload") or {}
+            if pl.get("visual_perception"):
+                vp = pl["visual_perception"]
+                break
+            if pl.get("sku"):
+                ordered_sku = pl["sku"]
+                break
+    if vp and vp.get("sku"):
+        ordered_sku = vp["sku"]
+
     input_photos = [p for p in (request.get("inputs") or []) if p.get("kind") in (None, "image") or str(p.get("ref", "")).lower().endswith((".jpg", ".jpeg", ".png", ".webp"))] or photos(r)
     evidence_refs = [p["ref"] for p in input_photos] or [f"fixtures/returns/{subject_id}_1.jpg"]
 

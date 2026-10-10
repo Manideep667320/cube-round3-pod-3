@@ -4,14 +4,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="CUBE Pod-3 — the autonomous multi-agent intelligence layer for physical commerce operations.">
-  <meta name="theme-color" content="#eef2f9">
+  <meta name="description" content="Medha // The autonomous intelligence layer for physical commerce operations.">
+  <meta name="theme-color" content="#F7F3ED">
   <meta name="color-scheme" content="light">
-  <title>CUBE // OS for Product Management</title>
-  <link rel="stylesheet" href="/static/styles.css?v=6.0">
+  <title>Medha // Autonomous Physical Commerce & Multi-Agent OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css?v=7.0">
   <script>
     // Self-Contained Core Router & UI Handlers - Synchronous & Bulletproof
     window._heroIntroFinished = false;
+
+    window.openStationScanner = function(stage) {
+      stage = stage || (window.currentRoute || 'receiving');
+      var qrImg = document.querySelector('#qrModal img');
+      if (qrImg) {
+        qrImg.src = '/api/scanner-qr?stage=' + stage + '&t=' + Date.now();
+      }
+      var modalTitle = document.getElementById('qrModalTitle');
+      if (modalTitle) {
+        modalTitle.textContent = 'Connect Handheld Scanner (' + stage.toUpperCase() + ' AGENT)';
+      }
+      var hintEl = document.getElementById('qrUrlHint');
+      if (hintEl && window._lanUrl) {
+        hintEl.textContent = window._lanUrl + '?stage=' + stage;
+      }
+      var modal = document.getElementById('qrModal');
+      if (modal) {
+        modal.style.display = 'flex';
+      }
+      if (window.showToast) {
+        window.showToast('Opened phone camera pairing for ' + stage.toUpperCase() + ' agent');
+      }
+    };
 
     window.revealHeroElements = function () {
       if (window._heroIntroFinished) return;
@@ -145,8 +171,78 @@
       }, 500);
     };
 
-    // Delegated click listener: ANY element with [data-route] will switch route immediately
+    // Storefront Interactive State Handlers (DESIGN.md Section 7)
+    window._wishlistCount = 2;
+    window._cartCount = 3;
+
+    window.toggleWishlist = function (btn, itemName) {
+      btn.classList.toggle('active');
+      var isFav = btn.classList.contains('active');
+      btn.innerHTML = isFav 
+        ? '<svg class="nexa-svg-icon" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>'
+        : '<svg class="nexa-svg-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
+      window._wishlistCount += isFav ? 1 : -1;
+      if (window._wishlistCount < 0) window._wishlistCount = 0;
+      var el = document.getElementById('nexaWishlistCount');
+      if (el) el.textContent = window._wishlistCount;
+      window.showToast(isFav ? ('Added ' + itemName + ' to Wishlist') : ('Removed ' + itemName + ' from Wishlist'));
+    };
+
+    window.addToCart = function (btn, itemName, price) {
+      window._cartCount += 1;
+      var el = document.getElementById('nexaCartCount');
+      if (el) el.textContent = window._cartCount;
+      btn.textContent = 'Added';
+      btn.style.background = 'var(--color-success)';
+      btn.style.color = '#ffffff';
+      btn.style.borderColor = 'var(--color-success)';
+      setTimeout(function () {
+        btn.textContent = '+ Add';
+        btn.style.background = '';
+        btn.style.color = '';
+        btn.style.borderColor = '';
+      }, 1500);
+      window.showToast('Added ' + itemName + ' (' + price + ') to Bag');
+    };
+
+    window.filterFeatured = function (tabBtn, filter) {
+      var tabs = document.querySelectorAll('.nexa-tab-btn');
+      tabs.forEach(function (t) { t.classList.remove('active'); });
+      tabBtn.classList.add('active');
+      var cards = document.querySelectorAll('.nexa-product-card');
+      cards.forEach(function (c) {
+        if (filter === 'all') {
+          c.style.display = 'flex';
+        } else {
+          var tag = c.getAttribute('data-tab') || '';
+          c.style.display = (tag.indexOf(filter) !== -1) ? 'flex' : 'none';
+        }
+      });
+      window.showToast('Filter: ' + tabBtn.textContent);
+    };
+
+    window.filterCategory = function (catName) {
+      window.showToast('Selected: ' + catName);
+      var target = document.getElementById('sec-pillars');
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth' });
+      }
+    };
+
+    // Delegated click listener: ANY element with [data-route], [data-wishlist], or [data-cart]
     document.addEventListener('click', function (e) {
+      var wishBtn = e.target.closest('[data-wishlist]');
+      if (wishBtn) {
+        e.preventDefault();
+        window.toggleWishlist(wishBtn, wishBtn.getAttribute('data-wishlist'));
+        return;
+      }
+      var cartBtn = e.target.closest('[data-cart]');
+      if (cartBtn) {
+        e.preventDefault();
+        window.addToCart(cartBtn, cartBtn.getAttribute('data-cart'), cartBtn.getAttribute('data-price') || '');
+        return;
+      }
       var trigger = e.target.closest('[data-route]');
       if (trigger) {
         var route = trigger.getAttribute('data-route');
@@ -189,74 +285,74 @@
   <!-- Left Sidebar Navigation -->
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-icon">▲</div>
+      <div class="logo-icon" style="display:flex;align-items:center;justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 3 22 21 2 21"/></svg></div>
       <div>
-        <div class="logo-text">OS for</div>
-        <div class="logo-sub">Product Management</div>
+        <div class="logo-text">Medha // OS</div>
+        <div class="logo-sub">Autonomous Operations</div>
       </div>
     </div>
 
     <nav class="sidebar-nav">
       <div class="nav-item nav-item-landing" data-route="landing">
-        <span class="nav-item-icon">🌐</span>
+        <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
         <span>Landing Page</span>
       </div>
       <div class="nav-item active" data-route="overview">
-        <span class="nav-item-icon">▦</span>
+        <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
         <span>Overview</span>
       </div>
       <div class="nav-item" data-route="overview">
-        <span class="nav-item-icon">⚡</span>
+        <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
         <span>Active Operations</span>
       </div>
       <div class="nav-item" data-route="passport">
-        <span class="nav-item-icon">📇</span>
+        <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><line x1="15" y1="8" x2="17" y2="8"/><line x1="15" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="17" y2="16"/></svg></span>
         <span>Product Passports</span>
         <span class="nav-badge-pill">7</span>
       </div>
 
       <div class="nav-section-title">AGENTS</div>
       <div class="nav-item" data-route="receiving">
-        <span class="nav-item-icon">📥</span>
+        <span class="nav-stage-badge">01</span>
         <span>01 Receiving</span>
       </div>
       <div class="nav-item" data-route="prep">
-        <span class="nav-item-icon">🏷️</span>
+        <span class="nav-stage-badge">02</span>
         <span>02 Prep</span>
       </div>
       <div class="nav-item" data-route="pack">
-        <span class="nav-item-icon">📦</span>
+        <span class="nav-stage-badge">03</span>
         <span>03 Pack</span>
       </div>
       <div class="nav-item" data-route="returns">
-        <span class="nav-item-icon">🔄</span>
+        <span class="nav-stage-badge">04</span>
         <span>04 Returns</span>
       </div>
       <div class="nav-item" data-route="recovery">
-        <span class="nav-item-icon">🛡️</span>
+        <span class="nav-stage-badge">05</span>
         <span>05 Recovery</span>
       </div>
 
       <div class="nav-section-title">SYSTEM</div>
       <div class="nav-item" data-route="passport">
-        <span class="nav-item-icon">⏱️</span>
+        <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
         <span>Event Timeline</span>
       </div>
       <div class="nav-item" data-route="overview">
-        <span class="nav-item-icon">📚</span>
+        <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
         <span>Evidence Library</span>
       </div>
       <div class="nav-item" data-route="returns">
-        <span class="nav-item-icon">📋</span>
+        <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></span>
         <span>Review Queue</span>
         <span class="nav-badge-pill" style="color: #b45309; background: #fef3c7;">6</span>
       </div>
       <div class="nav-item" data-route="prep">
-        <span class="nav-item-icon">⚖️</span>
+        <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18"/><path d="M5 8h14"/><path d="M4 14l3-6 3 6a3 3 0 0 1-6 0z"/><path d="M14 14l3-6 3 6a3 3 0 0 1-6 0z"/></svg></span>
         <span>Rules & Requirements</span>
       </div>
       <div class="nav-item" data-route="overview">
-        <span class="nav-item-icon">⚙️</span>
+        <span class="nav-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
         <span>Settings</span>
       </div>
     </nav>
@@ -268,21 +364,21 @@
     <!-- Top App Header -->
     <header class="app-header">
       <div class="search-bar-wrap">
-        <span class="search-icon">🔍</span>
+        <span class="search-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
         <input type="text" class="search-input" id="globalSearch"
           placeholder="Search by SKU, LPN, Order ID, RCV/PRP/PCK/RET/RCY ID...">
       </div>
 
       <div class="header-right">
         <button class="btn btn-secondary btn-sm" data-route="landing" title="Back to Landing Page">
-          <span>🌐</span> Landing Page
+          <span>Landing Page</span>
         </button>
         <button class="btn btn-secondary btn-sm" id="btnPairPhone">
-          <span>📱</span> Connect Phone Scanner
+          <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>Connect Phone Scanner</span>
         </button>
-        <button class="header-icon-btn" title="Notifications" data-route="overview">🔔</button>
-        <button class="header-icon-btn" title="Documentation" data-route="prep">📖</button>
-        <button class="header-icon-btn" title="Settings" data-route="overview">⚙️</button>
+        <button class="header-icon-btn" title="Notifications" data-route="overview"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+        <button class="header-icon-btn" title="Documentation" data-route="prep"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></button>
+        <button class="header-icon-btn" title="Settings" data-route="overview"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
         <div class="user-profile-pill" data-route="passport">
           <div class="user-avatar">JD</div>
           <div>
@@ -301,66 +397,103 @@
       <!-- ========================================== -->
       <section class="view-page active" id="view-landing">
 
-        <!-- Floating Glass Island Navbar -->
-        <header class="landing-nav-wrap">
-          <nav class="landing-nav">
-            <div class="landing-brand" data-route="landing">
-              <div class="landing-brand-logo">▲</div>
-              <div>
-                <div class="landing-brand-title">CUBE // Pod-3</div>
-                <div class="landing-brand-subtitle">Autonomous Multi-Agent Commerce Engine</div>
+        <!-- ======================================================== -->
+        <!-- 4.1 SITE HEADER / PRIMARY NAVIGATION                     -->
+        <!-- ======================================================== -->
+        <header class="nexa-header">
+          <div class="nexa-header-inner">
+            <div class="nexa-brand" data-route="landing">
+              <span class="nexa-brand-wordmark">Medha</span>
+              <span class="nexa-brand-tag">OS & Store</span>
+            </div>
+
+            <nav class="nexa-nav-links">
+              <span class="nexa-nav-link active" onclick="document.getElementById('sec-hero').scrollIntoView({ behavior: 'smooth' })">Overview</span>
+              <span class="nexa-nav-link" onclick="document.getElementById('sec-pillars').scrollIntoView({ behavior: 'smooth' })">Core Pillars</span>
+              <span class="nexa-nav-link" onclick="document.getElementById('sec-agents').scrollIntoView({ behavior: 'smooth' })">5 Agents</span>
+              <span class="nexa-nav-link" data-route="overview">Cockpit</span>
+              <span class="nexa-nav-link" data-route="passport">Passports</span>
+            </nav>
+
+            <div class="nexa-header-right">
+              <div class="nexa-search-wrap">
+                <span class="nexa-search-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+                <input type="text" class="nexa-search-input" placeholder="Search catalogue...">
+              </div>
+              <button class="nexa-icon-btn" title="Wishlist" onclick="window.showToast('Wishlist: ' + window._wishlistCount + ' saved items')">
+                <span><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></span>
+                <span class="nexa-badge-count" id="nexaWishlistCount">2</span>
+              </button>
+              <button class="nexa-icon-btn" title="Shopping Bag" onclick="window.showToast('Cart: ' + window._cartCount + ' items ready')">
+                <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+                <span class="nexa-badge-count" id="nexaCartCount">3</span>
+              </button>
+              <button class="btn-cockpit-link" data-route="overview">
+                <span>Launch Cockpit</span>
+                <span>↗</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <!-- ======================================================== -->
+        <!-- 4.2 HERO / EDITORIAL PRODUCT SHOWCASE                    -->
+        <!-- ======================================================== -->
+        <section class="nexa-hero" id="sec-hero">
+          <div class="nexa-hero-grid">
+            <div class="nexa-hero-content">
+              <div class="nexa-eyebrow">
+                <span class="nexa-bullet">●</span>
+                <span>DISCOVER · SHOP · BE INSPIRED</span>
+              </div>
+              <h1 class="nexa-hero-headline">
+                Everything You Love In One Place
+              </h1>
+              <p class="nexa-hero-sub">
+                Explore curated collections of fashion, tech, home living, and essentials — inspected, verified, and delivered with zero-defect autonomous multi-agent precision.
+              </p>
+              <div class="nexa-hero-actions">
+                <button class="btn-nexa-primary" onclick="document.getElementById('sec-pillars').scrollIntoView({ behavior: 'smooth' })">
+                  <span>Explore Architecture</span>
+                  <span>↓</span>
+                </button>
+                <button class="btn-nexa-secondary" data-route="overview">
+                  <span>Launch Operations Cockpit</span>
+                  <span>↗</span>
+                </button>
+              </div>
+
+              <!-- Social Proof Row -->
+              <div class="nexa-social-proof">
+                <div class="nexa-avatars-cluster">
+                  <img class="nexa-avatar-circle" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80" alt="Customer">
+                  <img class="nexa-avatar-circle" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80" alt="Customer">
+                  <img class="nexa-avatar-circle" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&auto=format&fit=crop&q=80" alt="Customer">
+                  <img class="nexa-avatar-circle" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&auto=format&fit=crop&q=80" alt="Customer">
+                </div>
+                <div class="nexa-social-text">
+                  <div><strong>4.9 Rating</strong> · 48,000+ conscious shoppers</div>
+                  <div style="color: var(--color-text-muted); font-size: 11px;">100% Cryptographic Product Passports Verified</div>
+                </div>
               </div>
             </div>
 
-            <div class="landing-nav-links">
-              <a href="#sec-hero" class="landing-nav-link">Live Conveyor</a>
-              <a href="#sec-pillars" class="landing-nav-link">Architecture</a>
-              <a href="#sec-agents" class="landing-nav-link">5 Agents</a>
-              <a href="#sec-passport" class="landing-nav-link">Evidence Passport</a>
-              <a href="#sec-edge" class="landing-nav-link">Edge Vision</a>
-            </div>
-
-            <div class="landing-nav-actions">
-              <button class="btn-landing-primary" data-route="overview">
-                <span>Launch Cockpit</span>
-                <span class="btn-arrow-circle">↗</span>
-              </button>
-            </div>
-          </nav>
-        </header>
-
-        <!-- Hero Section with Background Video -->
-        <section class="landing-hero" id="sec-hero">
-          <!-- Background Video: Natural, Zero Filter, Stops at Last Frame -->
-          <video id="heroPipelineVideo" class="hero-bg-video" autoplay muted playsinline preload="auto"
-            poster="/static/public/video_preview.jpg">
-            <source src="/static/public/gemini_generated_video_39d5ed87.mp4" type="video/mp4">
-            Your browser does not support HTML5 video.
-          </video>
-
-          <!-- Skip Intro pill (accessible while video is running) -->
-          <button class="hero-intro-skip" id="heroIntroSkip" onclick="window.revealHeroElements()">
-            <span>Skip Intro</span>
-            <span>⏭</span>
-          </button>
-
-          <!-- Hero Content Foreground (Pops up and slides in when video stops at last frame) -->
-          <div class="hero-content-wrap">
-            <h1 class="hero-headline">
-              The Autonomous Intelligence Layer for <span class="headline-highlight">Physical Commerce Operations</span>.
-            </h1>
-
-            <p class="hero-sub">
-              Five coordinated AI vision agents continuously inspect inbound shipments, enforce Amazon FBA packaging
-              compliance, verify packing BOMs, catch return fraud with multi-modal visual comparison, and recover
-              chargeback revenue in real time.
-            </p>
-
-            <div class="hero-actions-row">
-              <button class="btn-landing-primary hero-main-cta" data-route="overview">
-                <span>Launch Live Operations Cockpit</span>
-                <span class="btn-arrow-circle">↗</span>
-              </button>
+            <!-- Hero Visual Studio Frame with Pipeline Video & Floating Badges -->
+            <div class="nexa-hero-visual">
+              <div class="nexa-floating-offer">
+                <span class="stage-num-chip">CURATED</span>
+                <span>New Arrivals · Up to 40% Off</span>
+              </div>
+              <div class="nexa-floating-verify">
+                <span class="stage-num-chip">VERIFIED</span>
+                <span>Autonomous Vision Inspected</span>
+              </div>
+              <div class="nexa-video-container">
+                <video id="heroPipelineVideo" autoplay muted playsinline preload="auto" poster="/static/public/video_preview.jpg">
+                  <source src="/static/public/gemini_generated_video_39d5ed87.mp4" type="video/mp4">
+                  Your browser does not support HTML5 video.
+                </video>
+              </div>
             </div>
           </div>
         </section>
@@ -379,7 +512,7 @@
           <div class="bento-pillars-grid">
             <div class="bento-pillar-card">
               <div>
-                <div class="bento-icon-box" style="background: rgba(219, 234, 254, 0.7); color: #2563eb;">📱</div>
+                <div class="bento-icon-box" style="background: rgba(219, 234, 254, 0.7); color: #2563eb;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
                 <div class="bento-card-title">Zero Hardware Overhead</div>
                 <div class="bento-card-body">
                   No $1,500 Zebra scanners required. Operators pair standard iOS/Android phones in seconds via QR code.
@@ -394,7 +527,7 @@
 
             <div class="bento-pillar-card">
               <div>
-                <div class="bento-icon-box" style="background: rgba(220, 252, 231, 0.7); color: #16a34a;">⚖️</div>
+                <div class="bento-icon-box" style="background: rgba(220, 252, 231, 0.7); color: #16a34a;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><path d="M5 8h14"/><path d="M4 14l3-6 3 6a3 3 0 0 1-6 0z"/><path d="M14 14l3-6 3 6a3 3 0 0 1-6 0z"/></svg></div>
                 <div class="bento-card-title">Amazon Rules 101–601</div>
                 <div class="bento-card-body">
                   Rigid automated verification of polybag suffocation warnings, FNSKU label placement, liquid
@@ -409,7 +542,7 @@
 
             <div class="bento-pillar-card">
               <div>
-                <div class="bento-icon-box" style="background: rgba(243, 232, 255, 0.7); color: #7c3aed;">🔐</div>
+                <div class="bento-icon-box" style="background: rgba(243, 232, 255, 0.7); color: #7c3aed;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
                 <div class="bento-card-title">Cryptographic Lineage</div>
                 <div class="bento-card-body">
                   Every image captured generates an immutable SHA-256 fingerprint anchored to the unit's Product
@@ -424,7 +557,7 @@
 
             <div class="bento-pillar-card">
               <div>
-                <div class="bento-icon-box" style="background: rgba(254, 226, 226, 0.7); color: #dc2626;">🛡️</div>
+                <div class="bento-icon-box" style="background: rgba(254, 226, 226, 0.7); color: #dc2626;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
                 <div class="bento-card-title">Automated SAFE-T Claims</div>
                 <div class="bento-card-body">
                   When Amazon or buyers claim items arrived damaged or defective, the system correlates upstream Prep
@@ -456,7 +589,7 @@
               <div>
                 <div class="agent-badge-row">
                   <span class="agent-pill" style="background: #dbeafe; color: #1e40af;">STAGE 01 // DOCK</span>
-                  <span style="font-size: 18px;">📥</span>
+                  <span class="stage-num-chip">01</span>
                 </div>
                 <div class="agent-card-title">Inbound Receiving Agent</div>
                 <div class="agent-card-desc">
@@ -485,7 +618,7 @@
               <div>
                 <div class="agent-badge-row">
                   <span class="agent-pill" style="background: #dcfce7; color: #166534;">STAGE 02 // RULES 101–601</span>
-                  <span style="font-size: 18px;">🏷️</span>
+                  <span class="stage-num-chip">02</span>
                 </div>
                 <div class="agent-card-title">Prep Compliance Agent</div>
                 <div class="agent-card-desc">
@@ -513,7 +646,7 @@
               <div>
                 <div class="agent-badge-row">
                   <span class="agent-pill" style="background: #e0e7ff; color: #3730a3;">STAGE 03 // FULFILLMENT</span>
-                  <span style="font-size: 18px;">📦</span>
+                  <span class="stage-num-chip">03</span>
                 </div>
                 <div class="agent-card-title">Pack Verification Agent</div>
                 <div class="agent-card-desc">
@@ -541,7 +674,7 @@
               <div>
                 <div class="agent-badge-row">
                   <span class="agent-pill" style="background: #fef3c7; color: #92400e;">STAGE 04 // COMPARATOR</span>
-                  <span style="font-size: 18px;">🔄</span>
+                  <span class="stage-num-chip">04</span>
                 </div>
                 <div class="agent-card-title">Returns Fraud Agent</div>
                 <div class="agent-card-desc">
@@ -569,7 +702,7 @@
               <div>
                 <div class="agent-badge-row">
                   <span class="agent-pill" style="background: #fee2e2; color: #991b1b;">STAGE 05 // REVENUE</span>
-                  <span style="font-size: 18px;">🛡️</span>
+                  <span class="stage-num-chip">05</span>
                 </div>
                 <div class="agent-card-title">Financial Recovery Agent</div>
                 <div class="agent-card-desc">
@@ -595,30 +728,30 @@
 
             <!-- View All in Cockpit Card -->
             <div class="agent-showcase-card"
-              style="background: linear-gradient(135deg, #1e293b, #0f172a); color: #ffffff;">
+              style="background: var(--color-dark-surface); color: var(--color-dark-text); border: 1px solid rgba(255,255,255,0.12);">
               <div>
                 <div class="agent-badge-row">
-                  <span class="agent-pill" style="background: rgba(255,255,255,0.2); color: #ffffff;">ALL 5
+                  <span class="agent-pill" style="background: rgba(255,255,255,0.15); color: #ffffff;">ALL 5
                     AGENTS</span>
-                  <span style="font-size: 18px;">🚀</span>
+                  <span class="stage-num-chip">ALL</span>
                 </div>
-                <div class="agent-card-title" style="color: #ffffff;">Live Multi-Agent Cockpit</div>
+                <div class="agent-card-title" style="color: var(--color-dark-text);">Live Multi-Agent Cockpit</div>
                 <div class="agent-card-desc" style="color: #cbd5e1;">
                   Monitor all active warehouse operations simultaneously, review queue alerts, stream live camera
                   photos, and inspect cryptographic product passports in real time.
                 </div>
                 <div class="agent-metrics-box"
-                  style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.15); color: #ffffff;">
+                  style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); color: #ffffff;">
                   <div style="color: #94a3b8; font-size: 10px; margin-bottom: 4px;">SYSTEM HEALTH:</div>
                   <div style="display: flex; justify-content: space-between;"><span>Neon DB:</span><strong
-                      style="color: #4ade80;">ONLINE</strong></div>
+                      style="color: var(--color-success);">ONLINE</strong></div>
                   <div style="display: flex; justify-content: space-between;"><span>SSE Stream:</span><strong
-                      style="color: #4ade80;">BROADCASTING</strong></div>
+                      style="color: var(--color-success);">BROADCASTING</strong></div>
                   <div style="display: flex; justify-content: space-between;"><span>Total Screens:</span><strong>7
                       Specialized Views</strong></div>
                 </div>
               </div>
-              <button class="agent-card-btn" data-route="overview" style="background: #ffffff; color: #0f172a;">
+              <button class="agent-card-btn" data-route="overview" style="background: var(--color-surface); color: var(--color-text-primary); border: 1px solid var(--color-border);">
                 <span>Enter Operations Cockpit Now</span>
                 <span>↗</span>
               </button>
@@ -665,23 +798,23 @@
               <div
                 style="display: flex; flex-direction: column; gap: 10px; font-size: 12px; font-family: var(--font-mono);">
                 <div style="display: flex; gap: 10px; align-items: center;">
-                  <span style="color: var(--success);">✓</span>
+                  <span style="color: var(--success); font-weight:700;">PASS</span>
                   <span><strong>10:24 AM</strong> Dock Receiving Ingested</span>
                 </div>
                 <div style="display: flex; gap: 10px; align-items: center;">
-                  <span style="color: var(--success);">✓</span>
+                  <span style="color: var(--success); font-weight:700;">PASS</span>
                   <span><strong>10:28 AM</strong> Rules 101–601 Pass (PRP-0014)</span>
                 </div>
                 <div style="display: flex; gap: 10px; align-items: center;">
-                  <span style="color: var(--success);">✓</span>
+                  <span style="color: var(--success); font-weight:700;">PASS</span>
                   <span><strong>10:32 AM</strong> Box #4 Packed & Sealed</span>
                 </div>
                 <div style="display: flex; gap: 10px; align-items: center;">
-                  <span style="color: var(--warning);">⚠</span>
+                  <span style="color: var(--color-accent-gold); font-weight:700;">REVIEW</span>
                   <span><strong>02:15 PM</strong> Customer Return Defect Flagged</span>
                 </div>
                 <div style="display: flex; gap: 10px; align-items: center;">
-                  <span style="color: var(--accent-blue);">⚖</span>
+                  <span style="color: var(--color-accent-gold); font-weight:700;">CLAIM</span>
                   <span><strong>02:18 PM</strong> SAFE-T Dossier Generated ($45.00)</span>
                 </div>
               </div>
@@ -724,7 +857,7 @@
                   <span>Launch Operations Cockpit ↗</span>
                 </button>
                 <button class="btn btn-secondary" onclick="document.getElementById('btnPairPhone').click()">
-                  <span>📱 Connect Handheld Scanner</span>
+                  <span>Connect Handheld Scanner</span>
                 </button>
               </div>
             </div>
@@ -774,10 +907,10 @@
             </p>
             <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;">
               <button class="btn-landing-primary" data-route="overview"
-                style="background: #ffffff; color: #0f172a; font-size: 14px; padding: 12px 28px;">
+                style="background: var(--color-surface); color: var(--color-text-primary); font-size: 14px; padding: 12px 28px; border-radius: var(--radius-pill); border: 1px solid var(--color-border);">
                 <span>Launch Live Cockpit Now</span>
                 <span class="btn-arrow-circle"
-                  style="background: rgba(15,23,42,0.12); color: #0f172a; width: 26px; height: 26px;">↗</span>
+                  style="background: var(--color-surface-soft); color: var(--color-text-primary); width: 26px; height: 26px;">↗</span>
               </button>
             </div>
           </div>
@@ -787,17 +920,17 @@
         <footer class="landing-footer">
           <div class="footer-inner">
             <div style="display: flex; align-items: center; gap: 10px;">
-              <div class="landing-brand-logo" style="width: 26px; height: 26px; font-size: 12px;">▲</div>
-              <span style="font-weight: 700; font-size: 12px;">CUBE Pod-3 // OS for Product Management</span>
+              <div class="landing-brand-logo" style="width: 26px; height: 26px; display:flex; align-items:center; justify-content:center; background: var(--color-text-primary); color: var(--color-accent-gold); border: 1px solid var(--color-accent-gold);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 3 22 21 2 21"/></svg></div>
+              <span style="font-weight: 700; font-size: 13px; font-family: var(--font-serif); letter-spacing: 0.02em;">Medha // Autonomous Physical Commerce</span>
             </div>
-            <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">
+            <div style="font-family: var(--font-mono); font-size: 11px; color: var(--color-text-muted);">
               Powered by Neon PostgreSQL • Gemini 3.5 Flash Vision • FastAPI Server-Sent Events
             </div>
             <div style="display: flex; gap: 16px; font-size: 12px;">
               <a href="#" data-route="overview"
-                style="color: var(--accent-blue); text-decoration: none; font-weight: 600;">Open Cockpit ↗</a>
+                style="color: var(--color-accent-gold); text-decoration: none; font-weight: 600;">Open Cockpit ↗</a>
               <a href="#" data-route="passport"
-                style="color: var(--text-secondary); text-decoration: none; font-weight: 500;">Product Passports 📇</a>
+                style="color: var(--color-text-secondary); text-decoration: none; font-weight: 500;">Product Passports</a>
             </div>
           </div>
         </footer>
@@ -810,7 +943,7 @@
       <section class="view-page" id="view-overview">
         <div class="page-header-row">
           <div class="page-title-group">
-            <h1>Autonomous Operations Cockpit 👋</h1>
+            <h1>Autonomous Operations Cockpit</h1>
             <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Real-time multi-agent execution feed & unit states</div>
           </div>
           <div id="overviewLiveTimestamp" style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">
@@ -818,52 +951,52 @@
           </div>
         </div>
 
-        <!-- 4 KPI Glass Cards (Clickable) -->
+        <!-- 4 KPI Cards (Clickable) -->
         <div class="kpi-row">
           <div class="kpi-card" data-route="receiving">
-            <div class="kpi-icon" style="background: rgba(219, 234, 254, 0.7); color: #2563eb;">📦</div>
+            <div class="kpi-icon" style="background: rgba(183, 138, 89, 0.12); color: var(--color-accent-gold);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
             <div>
-              <div class="kpi-val" id="kpiInProgress" style="color: #2563eb;">0</div>
+              <div class="kpi-val" id="kpiInProgress" style="color: var(--color-accent-gold);">0</div>
               <div class="kpi-label">In Progress (Receiving)</div>
             </div>
           </div>
           <div class="kpi-card" data-route="returns">
-            <div class="kpi-icon" style="background: rgba(254, 243, 199, 0.7); color: #d97706;">⚠️</div>
+            <div class="kpi-icon" style="background: rgba(194, 142, 58, 0.12); color: var(--color-accent-gold);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
             <div>
-              <div class="kpi-val" id="kpiNeedsReview" style="color: #d97706;">0</div>
+              <div class="kpi-val" id="kpiNeedsReview" style="color: var(--color-sale);">0</div>
               <div class="kpi-label">Needs Review (Returns)</div>
             </div>
           </div>
           <div class="kpi-card" data-route="passport">
-            <div class="kpi-icon" style="background: rgba(220, 252, 231, 0.7); color: #16a34a;">✓</div>
+            <div class="kpi-icon" style="background: rgba(104, 129, 93, 0.12); color: var(--color-success);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
             <div>
-              <div class="kpi-val" id="kpiCompleted" style="color: #16a34a;">0</div>
+              <div class="kpi-val" id="kpiCompleted" style="color: var(--color-success);">0</div>
               <div class="kpi-label">Completed Units (Passports)</div>
             </div>
           </div>
           <div class="kpi-card" data-route="recovery">
-            <div class="kpi-icon" style="background: rgba(254, 226, 226, 0.7); color: #dc2626;">⛔</div>
+            <div class="kpi-icon" style="background: rgba(179, 78, 61, 0.12); color: var(--color-sale);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></div>
             <div>
-              <div class="kpi-val" id="kpiBlocked" style="color: #dc2626;">0</div>
+              <div class="kpi-val" id="kpiBlocked" style="color: var(--color-sale);">0</div>
               <div class="kpi-label">Blocked / Defect (Recovery)</div>
             </div>
           </div>
         </div>
 
         <!-- Multi-Agent Provenance & Architecture Showcase (Judges Panel) -->
-        <div class="card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(255,255,255,0.92), rgba(248,250,252,0.85));">
+        <div class="card" style="margin-bottom: 20px; background: var(--color-surface); border: 1px solid var(--color-border);">
           <div class="card-title-bar" style="margin-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 16px;">🏆</span>
+              <span class="stage-num-chip">FEDERATION</span>
               <span class="card-heading">Specialist Pod-3 Multi-Agent Federation</span>
             </div>
-            <span style="font-size: 11px; font-weight: 600; color: var(--accent-blue); background: rgba(37,99,235,0.08); padding: 3px 9px; border-radius: 9999px; border: 1px solid rgba(37,99,235,0.15);">5 Authoritative Vision Engines</span>
+            <span style="font-size: 11px; font-weight: 700; color: var(--color-accent-gold); background: rgba(183,138,89,0.12); padding: 3px 10px; border-radius: var(--radius-pill); border: 1px solid rgba(183,138,89,0.35);">5 Authoritative Vision Engines</span>
           </div>
           <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;">
             <!-- 01 Receiving -->
             <div class="card" data-route="receiving" style="padding: 12px; cursor: pointer; transition: all 0.2s ease; border: 1px solid var(--border-light); background: rgba(255,255,255,0.8);">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-                <span style="font-size: 20px;">📥</span>
+                <span class="stage-num-chip">01</span>
                 <span class="pill pill-pass" style="font-size: 9px; padding: 1px 6px;">LIVE</span>
               </div>
               <div style="font-weight: 700; font-size: 12.5px; color: var(--text-primary);">01 Receiving</div>
@@ -873,7 +1006,7 @@
             <!-- 02 Prep -->
             <div class="card" data-route="prep" style="padding: 12px; cursor: pointer; transition: all 0.2s ease; border: 1px solid var(--border-light); background: rgba(255,255,255,0.8);">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-                <span style="font-size: 20px;">🏷️</span>
+                <span class="stage-num-chip">02</span>
                 <span class="pill pill-pass" style="font-size: 9px; padding: 1px 6px;">LIVE</span>
               </div>
               <div style="font-weight: 700; font-size: 12.5px; color: var(--text-primary);">02 Prep</div>
@@ -883,7 +1016,7 @@
             <!-- 03 Pack -->
             <div class="card" data-route="pack" style="padding: 12px; cursor: pointer; transition: all 0.2s ease; border: 1px solid var(--border-light); background: rgba(255,255,255,0.8);">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-                <span style="font-size: 20px;">📦</span>
+                <span class="stage-num-chip">03</span>
                 <span class="pill pill-pass" style="font-size: 9px; padding: 1px 6px;">LIVE</span>
               </div>
               <div style="font-weight: 700; font-size: 12.5px; color: var(--text-primary);">03 Pack</div>
@@ -893,7 +1026,7 @@
             <!-- 04 Returns -->
             <div class="card" data-route="returns" style="padding: 12px; cursor: pointer; transition: all 0.2s ease; border: 1px solid var(--border-light); background: rgba(255,255,255,0.8);">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-                <span style="font-size: 20px;">🔄</span>
+                <span class="stage-num-chip">04</span>
                 <span class="pill pill-warn" style="font-size: 9px; padding: 1px 6px;">LIVE</span>
               </div>
               <div style="font-weight: 700; font-size: 12.5px; color: var(--text-primary);">04 Returns</div>
@@ -903,7 +1036,7 @@
             <!-- 05 Recovery -->
             <div class="card" data-route="recovery" style="padding: 12px; cursor: pointer; transition: all 0.2s ease; border: 1px solid var(--border-light); background: rgba(255,255,255,0.8);">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
-                <span style="font-size: 20px;">🛡️</span>
+                <span class="stage-num-chip">05</span>
                 <span class="pill pill-fail" style="font-size: 9px; padding: 1px 6px;">LIVE</span>
               </div>
               <div style="font-weight: 700; font-size: 12.5px; color: var(--text-primary);">05 Recovery</div>
@@ -915,11 +1048,11 @@
 
         <!-- Quick Actions Ribbon (Clickable) -->
         <div class="quick-actions-bar">
-          <button class="quick-action-btn" data-route="receiving"><span>📥</span> 01 Receiving</button>
-          <button class="quick-action-btn" data-route="prep"><span>🏷️</span> 02 Prep</button>
-          <button class="quick-action-btn" data-route="pack"><span>📦</span> 03 Pack</button>
-          <button class="quick-action-btn" data-route="returns"><span>🔄</span> 04 Returns</button>
-          <button class="quick-action-btn" data-route="recovery"><span>🛡️</span> 05 Recovery</button>
+          <button class="quick-action-btn" data-route="receiving"><span class="stage-num-chip">01</span> Receiving</button>
+          <button class="quick-action-btn" data-route="prep"><span class="stage-num-chip">02</span> Prep</button>
+          <button class="quick-action-btn" data-route="pack"><span class="stage-num-chip">03</span> Pack</button>
+          <button class="quick-action-btn" data-route="returns"><span class="stage-num-chip">04</span> Returns</button>
+          <button class="quick-action-btn" data-route="recovery"><span class="stage-num-chip">05</span> Recovery</button>
         </div>
 
         <div class="left-wide-grid">
@@ -976,15 +1109,15 @@
         <!-- Owner & Architecture Banner -->
         <div class="agent-owner-banner">
           <div class="agent-owner-tag">
-            <span style="font-size: 18px;">📥</span>
+            <span class="stage-num-chip">01</span>
             <span>Agent 01: Receiving Manager v2</span>
             <span class="agent-owner-pill">Gayathri (@gayathri2665)</span>
           </div>
           <div class="agent-feature-chips">
-            <span class="feature-chip">⚡ 4-State Physical Actions</span>
-            <span class="feature-chip">🔍 OpenCV Quality + zxing-cpp</span>
-            <span class="feature-chip">🧭 coach.py Retake Assistant</span>
-            <span class="feature-chip">📊 91.4% Benchmark Accuracy</span>
+            <span class="feature-chip">4-State Physical Actions</span>
+            <span class="feature-chip">OpenCV Quality + zxing-cpp</span>
+            <span class="feature-chip">coach.py Retake Assistant</span>
+            <span class="feature-chip">91.4% Benchmark Accuracy</span>
           </div>
         </div>
 
@@ -998,9 +1131,9 @@
           </div>
           <div class="btn-group">
             <input type="file" id="uploadInput_receiving" accept="image/*" style="display: none;" onchange="window.handleDirectUpload(event, 'receiving')">
-            <button class="btn btn-secondary" onclick="document.getElementById('uploadInput_receiving').click()">📷 Upload Photo</button>
-            <button class="btn btn-secondary" onclick="window.triggerCoachDemo()">🧭 Retake Coach</button>
-            <button class="btn btn-primary" data-route="prep">Continue to Prep →</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('uploadInput_receiving').click()">Upload Photo</button>
+            <button class="btn btn-secondary" onclick="window.triggerCoachDemo()">Retake Coach</button>
+            <button class="btn btn-primary" onclick="window.passOutputToNextStage('receiving', 'prep')">Pass Output to Agent 02 (Prep) →</button>
           </div>
         </div>
 
@@ -1029,16 +1162,16 @@
               <div class="image-viewer-frame" id="receivingImageFrame" style="position: relative; min-height: 280px; background: #0b1120; display: flex; align-items: center; justify-content: center; border-radius: 8px; overflow: hidden;">
                 <img id="receivingMainPhoto" src="" alt="Receiving unit capture" style="max-height: 380px; width: 100%; object-fit: contain; display: none;">
                 <div id="receivingPhotoPlaceholder" style="text-align: center; color: var(--text-muted); padding: 40px 20px;">
-                  <div style="font-size: 38px; margin-bottom: 10px;">📷</div>
+                  <div style="width: 44px; height: 44px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; color: var(--color-accent-gold);"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
                   <div style="font-weight: 600; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;">No Photo Captured Yet</div>
                   <div style="font-size: 12px; margin-bottom: 16px;">Open scanner on phone camera or snap photo to trigger Receiving Agent</div>
-                  <button class="btn btn-secondary btn-sm" onclick="document.getElementById('btnPairPhone').click()">📱 Connect Phone Scanner</button>
+                  <button class="btn btn-secondary btn-sm" onclick="window.openStationScanner('receiving')">Connect Phone Scanner</button>
                 </div>
-                <div class="image-viewer-controls" id="receivingImageControls" style="display: none;">🔍 Live Camera Capture</div>
+                <div class="image-viewer-controls" id="receivingImageControls" style="display: none;">Live Camera Capture</div>
               </div>
               <div class="thumbnail-row" id="receivingThumbsRow" style="margin-top: 10px;">
-                <div class="thumb-box thumb-add" onclick="document.getElementById('btnPairPhone').click()">
-                  <span>📱</span> Phone Cam
+                <div class="thumb-box thumb-add" onclick="window.openStationScanner('receiving')">
+                  <span>Phone Cam</span>
                 </div>
               </div>
             </div>
@@ -1071,7 +1204,7 @@
               <!-- Intelligent Retake Coach (coach.py) -->
               <div class="coach-box" id="coachCardBox">
                 <div class="coach-header">
-                  <span class="coach-title"><span>🧭</span> Retake Coach Advice (coach.py)</span>
+                  <span class="coach-title">Retake Coach Advice (coach.py)</span>
                   <span id="coachStatusPill" class="pill pill-pass" style="font-size: 10px;">OPTIMAL CAPTURE</span>
                 </div>
                 <div class="coach-msg" id="coachInstructionText">
@@ -1135,15 +1268,15 @@
                 Contract rule: overrides append outside the sealed cryptographic hash. Original perception findings remain permanently immutable in audit logs.
               </div>
               <div style="display: flex; gap: 8px;">
-                <button class="btn btn-secondary btn-sm" onclick="window.applyReceivingOverride('VISUAL_CHECK_OK')">✓ Visual Check OK</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.applyReceivingOverride('DOC_CORRECTED')">📄 Doc Corrected</button>
-                <button class="btn btn-secondary btn-sm" onclick="window.applyReceivingOverride('SUPPLIER_APPROVED')">🏢 Supplier OK</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.applyReceivingOverride('VISUAL_CHECK_OK')">Visual Check OK</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.applyReceivingOverride('DOC_CORRECTED')">Doc Corrected</button>
+                <button class="btn btn-secondary btn-sm" onclick="window.applyReceivingOverride('SUPPLIER_APPROVED')">Supplier OK</button>
               </div>
             </div>
 
             <div class="card" id="receivingBottomBanner" data-route="prep"
               style="background: var(--success-subtle); border-color: var(--success-border); cursor: pointer; margin-top: 14px;">
-              <div id="receivingBannerTitle" style="font-weight: 700; color: #166534; font-size: 12px; margin-bottom: 4px;">Proceed to Prep →</div>
+              <div id="receivingBannerTitle" style="font-weight: 700; color: #166534; font-size: 12px; margin-bottom: 4px;">Pass Receiving Output to Agent 02 (Prep) →</div>
               <div id="receivingBannerDesc" style="font-size: 11.5px; color: #15803d; line-height: 1.4;">Receiving completed. Click here to verify Amazon Prep Rules 101–601.</div>
             </div>
           </div>
@@ -1161,15 +1294,15 @@
         <!-- Owner & Architecture Banner -->
         <div class="agent-owner-banner">
           <div class="agent-owner-tag">
-            <span style="font-size: 18px;">🏷️</span>
+            <span class="stage-num-chip">02</span>
             <span>Agent 02: Prep Manager</span>
             <span class="agent-owner-pill">Manideep (@Manideep667320)</span>
           </div>
           <div class="agent-feature-chips">
-            <span class="feature-chip">📜 Amazon Rules 101–601</span>
-            <span class="feature-chip">🎯 Visual Grounding BBoxes</span>
-            <span class="feature-chip">⚡ 1 Batched VLM (&lt;800ms)</span>
-            <span class="feature-chip">🚪 Cartonization Gate: ALLOW</span>
+            <span class="feature-chip">Amazon Rules 101–601</span>
+            <span class="feature-chip">Visual Grounding BBoxes</span>
+            <span class="feature-chip">1 Batched VLM (&lt;800ms)</span>
+            <span class="feature-chip">Cartonization Gate: ALLOW</span>
           </div>
         </div>
 
@@ -1183,9 +1316,39 @@
           </div>
           <div class="btn-group">
             <input type="file" id="uploadInput_prep" accept="image/*" style="display: none;" onchange="window.handleDirectUpload(event, 'prep')">
-            <button class="btn btn-secondary" onclick="document.getElementById('uploadInput_prep').click()">📷 Upload Photo</button>
-            <button class="btn btn-secondary" id="btnToggleBBoxes" onclick="window.togglePrepBBoxes()">🎯 Toggle Grounding Boxes</button>
-            <button class="btn btn-primary" data-route="pack">Continue to Pack →</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('uploadInput_prep').click()">Upload Photo</button>
+            <button class="btn btn-secondary" id="btnToggleBBoxes" onclick="window.togglePrepBBoxes()">Toggle Grounding Boxes</button>
+            <button class="btn btn-primary" onclick="window.passOutputToNextStage('prep', 'pack')">Pass Output to Agent 03 (Pack) →</button>
+          </div>
+        </div>
+
+        
+        <!-- UPSTREAM INPUT FEED: RECEIVED FROM AGENT 01 (RECEIVING) -->
+        <div class="upstream-pipeline-card" id="prepUpstreamFeed">
+          <div class="upstream-header-row">
+            <div class="upstream-title">
+              <span class="upstream-from-tag">INPUT FEED // FROM AGENT 01 RECEIVING</span>
+              <span>Inbound Dock Clearance Passed as Input</span>
+            </div>
+            <span id="prepUpstreamStatusPill" class="pill pill-pass">INPUT RECEIVED & VERIFIED</span>
+          </div>
+          <div class="upstream-grid">
+            <div class="upstream-field">
+              <span class="upstream-label">Dock Decision</span>
+              <span class="upstream-val" id="prepUpstreamVerdict" style="color: var(--color-success); font-weight: 700;">ACCEPT (Verified)</span>
+            </div>
+            <div class="upstream-field">
+              <span class="upstream-label">Scanned GTIN / Barcode</span>
+              <span class="upstream-val mono" id="prepUpstreamBarcode">GTIN-08493021 (B08N5WRWNW)</span>
+            </div>
+            <div class="upstream-field">
+              <span class="upstream-label">Inbound SKU</span>
+              <span class="upstream-val mono" id="prepUpstreamSku">SKU-LAMP-LED (Desk Lamp)</span>
+            </div>
+            <div class="upstream-field">
+              <span class="upstream-label">Evidence Record</span>
+              <span class="upstream-val mono" id="prepUpstreamRecord">RCV-0014 (SHA-256 Intact)</span>
+            </div>
           </div>
         </div>
 
@@ -1228,16 +1391,16 @@
                 </div>
 
                 <div id="prepPhotoPlaceholder" style="text-align: center; color: var(--text-muted); padding: 40px 20px;">
-                  <div style="font-size: 38px; margin-bottom: 10px;">🏷️</div>
+                  <div style="width: 44px; height: 44px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; color: var(--color-accent-gold);"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div>
                   <div style="font-weight: 600; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;">No Prep Photo Captured</div>
                   <div style="font-size: 12px; margin-bottom: 16px;">Snap polybag & FNSKU photo via phone camera to inspect Amazon FBA compliance</div>
-                  <button class="btn btn-secondary btn-sm" onclick="document.getElementById('btnPairPhone').click()">📱 Connect Phone Scanner</button>
+                  <button class="btn btn-secondary btn-sm" onclick="window.openStationScanner('receiving')">Connect Phone Scanner</button>
                 </div>
-                <div class="image-viewer-controls" id="prepImageControls" style="display: none;">🔍 Live Capture (Grounding Available)</div>
+                <div class="image-viewer-controls" id="prepImageControls" style="display: none;">Live Capture (Grounding Available)</div>
               </div>
               <div class="thumbnail-row" id="prepThumbsRow" style="margin-top: 10px;">
-                <div class="thumb-box thumb-add" onclick="document.getElementById('btnPairPhone').click()">
-                  <span>📱</span> Phone Cam
+                <div class="thumb-box thumb-add" onclick="window.openStationScanner('receiving')">
+                  <span>Phone Cam</span>
                 </div>
               </div>
             </div>
@@ -1348,8 +1511,38 @@
           </div>
           <div class="btn-group">
             <input type="file" id="uploadInput_pack" accept="image/*" style="display: none;" onchange="window.handleDirectUpload(event, 'pack')">
-            <button class="btn btn-secondary" onclick="document.getElementById('uploadInput_pack').click()">📷 Upload Photo</button>
-            <button class="btn btn-primary" data-route="returns">Continue to Returns →</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('uploadInput_pack').click()">Upload Photo</button>
+            <button class="btn btn-primary" onclick="window.passOutputToNextStage('pack', 'returns')">Pass Output to Agent 04 (Returns) →</button>
+          </div>
+        </div>
+
+        
+        <!-- UPSTREAM INPUT FEED: RECEIVED FROM AGENT 02 (PREP) -->
+        <div class="upstream-pipeline-card" id="packUpstreamFeed">
+          <div class="upstream-header-row">
+            <div class="upstream-title">
+              <span class="upstream-from-tag">INPUT FEED // FROM AGENT 02 PREP</span>
+              <span>Amazon FBA Compliance Certificate Passed as Input</span>
+            </div>
+            <span id="packUpstreamGatePill" class="pill pill-pass">GATE: ALLOW (PACK AUTHORIZED)</span>
+          </div>
+          <div class="upstream-grid">
+            <div class="upstream-field">
+              <span class="upstream-label">Prep Certificate ID</span>
+              <span class="upstream-val mono" id="packUpstreamRecord">PRP-0014 (FBA Cleared)</span>
+            </div>
+            <div class="upstream-field">
+              <span class="upstream-label">Mandates Cleared</span>
+              <span class="upstream-val" id="packUpstreamRules">Amazon Rules 101, 201, 301 Passed</span>
+            </div>
+            <div class="upstream-field">
+              <span class="upstream-label">FNSKU Label Match</span>
+              <span class="upstream-val mono" id="packUpstreamFnsku">X00DUMMY014 (Flat & Scannable)</span>
+            </div>
+            <div class="upstream-field">
+              <span class="upstream-label">Packaging Safety</span>
+              <span class="upstream-val" id="packUpstreamPolybag">Polybag Sealed + Warning Verified</span>
+            </div>
           </div>
         </div>
 
@@ -1385,12 +1578,12 @@
               <div class="image-viewer-frame" id="packImageFrame" style="position: relative; min-height: 260px; background: #0b1120; display: flex; align-items: center; justify-content: center; border-radius: 8px; overflow: hidden;">
                 <img id="packMainPhoto" src="" alt="Packed carton photo" style="max-height: 340px; width: 100%; object-fit: contain; display: none;">
                 <div id="packPhotoPlaceholder" style="text-align: center; color: var(--text-muted); padding: 40px 20px;">
-                  <div style="font-size: 38px; margin-bottom: 10px;">📦</div>
+                  <div style="width: 44px; height: 44px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; color: var(--color-accent-gold);"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
                   <div style="font-weight: 600; font-size: 14px; color: var(--text-primary); margin-bottom: 4px;">No Pack Photo Captured</div>
                   <div style="font-size: 12px; margin-bottom: 16px;">Snap top-view packing box photo to verify item contents and quantities</div>
-                  <button class="btn btn-secondary btn-sm" onclick="document.getElementById('btnPairPhone').click()">📱 Connect Phone Scanner</button>
+                  <button class="btn btn-secondary btn-sm" onclick="window.openStationScanner('receiving')">Connect Phone Scanner</button>
                 </div>
-                <div class="image-viewer-controls" id="packImageControls" style="display: none;">🔍 Live Capture</div>
+                <div class="image-viewer-controls" id="packImageControls" style="display: none;">Live Capture</div>
               </div>
             </div>
 
@@ -1403,7 +1596,7 @@
                 <div class="meta-item"><span class="meta-label">Dimensions</span><span class="meta-value" id="packDimensions">12 x 10 x 8 in</span></div>
                 <div class="meta-item"><span class="meta-label">Weight</span><span class="meta-value" id="packWeight">4.2 lb</span></div>
               </div>
-              <button class="btn btn-secondary btn-sm" style="width: 100%;" onclick="showToast('Printing Shipping Label & Barcode')">🖨️ Print Shipping Label</button>
+              <button class="btn btn-secondary btn-sm" style="width: 100%;" onclick="showToast('Printing Shipping Label & Barcode')">Print Shipping Label</button>
             </div>
           </div>
 
@@ -1418,15 +1611,15 @@
               <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px;">
                 <div style="background: #ffffff; border: 1px solid var(--border-light); border-radius: 6px; padding: 8px; text-align: center;">
                   <div style="font-size: 9.5px; color: var(--text-muted); font-weight: 700;">ITEMS PRESENT</div>
-                  <div id="packCheckPresent" style="font-size: 13px; font-weight: 800; color: #16a34a; margin-top: 2px;">✓ PASS</div>
+                  <div id="packCheckPresent" style="font-size: 13px; font-weight: 800; color: #16a34a; margin-top: 2px;">PASS</div>
                 </div>
                 <div style="background: #ffffff; border: 1px solid var(--border-light); border-radius: 6px; padding: 8px; text-align: center;">
                   <div style="font-size: 9.5px; color: var(--text-muted); font-weight: 700;">QUANTITIES MATCH</div>
-                  <div id="packCheckQty" style="font-size: 13px; font-weight: 800; color: #16a34a; margin-top: 2px;">✓ 1/1 MATCH</div>
+                  <div id="packCheckQty" style="font-size: 13px; font-weight: 800; color: #16a34a; margin-top: 2px;">1/1 MATCH</div>
                 </div>
                 <div style="background: #ffffff; border: 1px solid var(--border-light); border-radius: 6px; padding: 8px; text-align: center;">
                   <div style="font-size: 9.5px; color: var(--text-muted); font-weight: 700;">NO EXTRA ITEMS</div>
-                  <div id="packCheckExtra" style="font-size: 13px; font-weight: 800; color: #16a34a; margin-top: 2px;">✓ 0 UNEXPECTED</div>
+                  <div id="packCheckExtra" style="font-size: 13px; font-weight: 800; color: #16a34a; margin-top: 2px;">0 UNEXPECTED</div>
                 </div>
               </div>
               <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px; font-style: italic;">
@@ -1464,8 +1657,8 @@
               <div class="card-heading" style="margin-bottom: 12px;">Packing Inspection Checks</div>
               <div id="packChecklistContainer" style="display: flex; flex-direction: column; gap: 8px; font-size: 12px;"></div>
 
-              <button class="btn btn-primary" data-route="returns" style="width: 100%; margin-top: 16px;">
-                Complete Packing →
+              <button class="btn btn-primary" onclick="window.passOutputToNextStage('pack', 'returns')" style="width: 100%; margin-top: 16px;">
+                Pass Pack Output to Agent 04 (Returns) →
               </button>
             </div>
           </div>
@@ -1507,8 +1700,8 @@
           </div>
           <div class="btn-group">
             <input type="file" id="uploadInput_returns" accept="image/*" style="display: none;" onchange="window.handleDirectUpload(event, 'returns')">
-            <button class="btn btn-secondary" onclick="document.getElementById('uploadInput_returns').click()">📷 Upload Photo</button>
-            <button class="btn btn-primary" data-route="recovery">Continue to Recovery →</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('uploadInput_returns').click()">Upload Photo</button>
+            <button class="btn btn-primary" onclick="window.passOutputToNextStage('returns', 'recovery')">Pass Output to Agent 05 (Recovery) →</button>
           </div>
         </div>
 
@@ -1520,14 +1713,14 @@
           </div>
           <div class="security-stepper">
             <div class="sec-step" style="border-color: #86efac; background: #f0fdf4;">
-              <div class="sec-step-num" style="background: #16a34a;">✓</div>
+              <div class="sec-step-num" style="background: #16a34a;">1</div>
               <div>
                 <div style="font-weight: 700; color: #166534; font-size: 11px;">1. Single-Use QR Token</div>
                 <div style="color: #15803d; font-size: 10px;">72h expiry, SHA-256 hashed</div>
               </div>
             </div>
             <div class="sec-step" style="border-color: #86efac; background: #f0fdf4;">
-              <div class="sec-step-num" style="background: #16a34a;">✓</div>
+              <div class="sec-step-num" style="background: #16a34a;">1</div>
               <div>
                 <div style="font-weight: 700; color: #166534; font-size: 11px;">2. Mobile HMAC OTP</div>
                 <div style="color: #15803d; font-size: 10px;">Delivery agent phone verified</div>
@@ -1539,6 +1732,36 @@
                 <div style="font-weight: 700; color: #1e40af; font-size: 11px;">3. Multimodal CV Pipeline</div>
                 <div style="color: #2563eb; font-size: 10px;">RapidOCR + YOLOv8 + Qwen Vision</div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        
+        <!-- UPSTREAM INPUT FEED: RECEIVED FROM AGENTS 02 & 03 (PREP & PACK) -->
+        <div class="upstream-pipeline-card" id="returnsUpstreamFeed">
+          <div class="upstream-header-row">
+            <div class="upstream-title">
+              <span class="upstream-from-tag">INPUT FEED // FROM AGENTS 02 & 03 PREP + PACK</span>
+              <span>Pre-Shipment Baseline Inspection Proof Passed as Input</span>
+            </div>
+            <span id="returnsUpstreamBaselinePill" class="pill pill-pass">BASELINE ACTIVE FOR COMPARISON</span>
+          </div>
+          <div class="upstream-grid">
+            <div class="upstream-field">
+              <span class="upstream-label">Pre-Shipment Records</span>
+              <span class="upstream-val mono" id="returnsUpstreamPrepRef">PRP-0014 & PCK-0014</span>
+            </div>
+            <div class="upstream-field">
+              <span class="upstream-label">Outbound Carton</span>
+              <span class="upstream-val" id="returnsUpstreamBox">Box #4 (Tamper-Evident Tape Sealed)</span>
+            </div>
+            <div class="upstream-field">
+              <span class="upstream-label">Outbound BOM Baseline</span>
+              <span class="upstream-val" id="returnsUpstreamBom">100% Items Present & Pristine</span>
+            </div>
+            <div class="upstream-field">
+              <span class="upstream-label">Comparator Mode</span>
+              <span class="upstream-val">Grounding Delta vs Returned Unit</span>
             </div>
           </div>
         </div>
@@ -1598,19 +1821,19 @@
               <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; margin-top: 6px;">
                 <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border-light);">
                   <span>Base Unit (BLUNT Umbrella)</span>
-                  <span style="color: #16a34a; font-weight: 700;">✓ Present</span>
+                  <span style="color: #16a34a; font-weight: 700;">Present</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border-light);">
                   <span>Protective Fabric Sleeve</span>
-                  <span style="color: #16a34a; font-weight: 700;">✓ Present</span>
+                  <span style="color: #16a34a; font-weight: 700;">Present</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border-light);">
                   <span>Warranty Card & Instructions</span>
-                  <span style="color: #16a34a; font-weight: 700;">✓ Present</span>
+                  <span style="color: #16a34a; font-weight: 700;">Present</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; padding: 4px 0;">
                   <span>Original Polybag / Outer Packaging</span>
-                  <span style="color: #d97706; font-weight: 700;">⚠️ Discarded / Missing</span>
+                  <span style="color: #d97706; font-weight: 700;">Missing / Worn</span>
                 </div>
               </div>
             </div>
@@ -1641,7 +1864,7 @@
               style="background: var(--accent-blue-subtle); border-color: var(--accent-blue-border); cursor: pointer; margin-top: 14px;">
               <div style="font-weight: 700; color: #1e40af; font-size: 12px; margin-bottom: 4px;">Save return record & Auditing →</div>
               <div style="font-size: 11.5px; color: #2563eb; line-height: 1.4;">Record added to Product Passport. Evidence forwarded to Recovery Manager for SAFE-T dispute evaluation.</div>
-              <button class="btn btn-primary btn-sm" data-route="recovery" style="margin-top: 10px;">Proceed to Recovery →</button>
+              <button class="btn btn-primary btn-sm" onclick="window.passOutputToNextStage('returns', 'recovery')" style="margin-top: 10px;">Pass Returns Output to Recovery →</button>
             </div>
           </div>
         </div>
@@ -1671,7 +1894,7 @@
           <div style="text-align: right;">
             <div style="font-size: 10px; color: var(--text-muted); font-weight: 600;">CLAIM ELIGIBILITY</div>
             <span id="recoveryEligibilityBadge" class="pill pill-pass" style="font-size: 13px; font-weight: 800; padding: 4px 12px; margin-top: 2px; display: inline-block;">
-              ✓ ACTIONABLE CLAIM
+              ACTIONABLE CLAIM
             </span>
           </div>
         </div>
@@ -1681,7 +1904,40 @@
             <h1>Chargeback & Defect Fee Investigation <span id="recoveryStatusBadge" class="pill pill-info">In Progress</span></h1>
           </div>
           <div class="btn-group">
-            <button class="btn btn-primary" onclick="generateDossier()">Generate SAFE-T Dossier</button>
+            <input type="file" id="uploadInput_recovery" accept="image/*" style="display: none;" onchange="window.handleDirectUpload(event, 'recovery')">
+            <button class="btn btn-secondary" onclick="document.getElementById('uploadInput_recovery').click()">Upload Dispute Photo</button>
+            <button class="btn btn-secondary" onclick="window.openStationScanner('recovery')">Connect Phone Cam</button>
+            <button class="btn btn-primary" onclick="generateDossier()">Generate SAFE-T Dossier &rarr;</button>
+          </div>
+        </div>
+
+        
+        <!-- UPSTREAM INPUT FEED: RECEIVED FROM AGENTS 01 -> 02 -> 03 -> 04 -->
+        <div class="upstream-pipeline-card" id="recoveryUpstreamFeed">
+          <div class="upstream-header-row">
+            <div class="upstream-title">
+              <span class="upstream-from-tag">INPUT FEED // FROM COMPLETE CHAIN (AGENTS 01 &rarr; 02 &rarr; 03 &rarr; 04)</span>
+              <span>Synthesized Multi-Agent Evidence Ledger Passed as Input</span>
+            </div>
+            <span class="pill pill-pass">FEE CONTRADICTION PROVEN</span>
+          </div>
+          <div class="upstream-grid">
+            <div class="upstream-field">
+              <span class="upstream-label">01 Receiving Dock Input</span>
+              <span class="upstream-val">RCV-0014 &bull; ACCEPT (Manifest Matched)</span>
+            </div>
+            <div class="upstream-field">
+              <span class="upstream-label">02 Amazon Prep Input</span>
+              <span class="upstream-val">PRP-0014 &bull; PASS (Rules 101/102 Sealed)</span>
+            </div>
+            <div class="upstream-field">
+              <span class="upstream-label">03 Fulfillment Pack Input</span>
+              <span class="upstream-val">PCK-0014 &bull; SEAL (BOM Matched)</span>
+            </div>
+            <div class="upstream-field">
+              <span class="upstream-label">04 ReturnGuard AI Input</span>
+              <span class="upstream-val">RTN-0014 &bull; RESTOCK (Like New)</span>
+            </div>
           </div>
         </div>
 
@@ -1711,7 +1967,7 @@
             <div id="recoveryContradictionCard"
               style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px; margin-bottom: 14px;">
               <div style="display: flex; align-items: center; justify-content: space-between;">
-                <span style="font-weight: 800; color: #166534; font-size: 12px;">✓ CONTRADICTS AMAZON DEFECT CLAIM</span>
+                <span style="font-weight: 800; color: #166534; font-size: 12px;">CONTRADICTS AMAZON DEFECT CLAIM</span>
                 <span class="pill pill-pass" style="font-size: 10px;">Exact Decimal('$25.00')</span>
               </div>
               <div style="font-size: 11.5px; color: #15803d; line-height: 1.4; margin-top: 4px;">
@@ -1777,7 +2033,7 @@
           <div style="display: flex; align-items: center; gap: 14px;">
             <div style="width: 56px; height: 56px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-light); background: #0b1120; display: flex; align-items: center; justify-content: center;">
               <img id="passportHeaderPhoto" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
-              <span id="passportHeaderPhotoPlaceholder" style="font-size: 22px;">📇</span>
+              <span id="passportHeaderPhotoPlaceholder" style="font-size: 22px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><line x1="15" y1="8" x2="17" y2="8"/><line x1="15" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="17" y2="16"/></svg></span>
             </div>
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
@@ -1815,7 +2071,7 @@
           <div class="card">
             <div class="card-title-bar">
               <span class="card-heading">Key Information</span>
-              <button class="btn btn-secondary btn-sm" onclick="showToast('Displaying Lineage Graph Visualizer')">View Graph 📊</button>
+              <button class="btn btn-secondary btn-sm" onclick="showToast('Displaying Lineage Graph Visualizer')">View Lineage Graph</button>
             </div>
             <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12px;">
               <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-light); padding-bottom: 6px;">
@@ -1856,14 +2112,14 @@
       <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; border-bottom: 1px solid var(--border-light); padding-bottom: 12px;">
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 20px;">🛡️</span>
+            <span class="stage-num-chip">05</span>
             <h2 id="dossierModalTitle" style="font-size: 16px; font-weight: 800; color: #1e3a8a; margin: 0;">Amazon SAFE-T Claim Evidence Dossier</h2>
           </div>
           <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
             Deterministic Multi-Agent Evidence Synthesis · Generated by Sai Kiran's Recovery Engine
           </div>
         </div>
-        <button class="modal-close" onclick="closeDossierModal()" style="font-size: 18px; border: none; background: transparent; cursor: pointer;">✕</button>
+        <button class="modal-close" onclick="closeDossierModal()" style="font-size: 18px; border: none; background: transparent; cursor: pointer;">&times;</button>
       </div>
 
       <!-- Dossier Metadata Grid -->
@@ -1890,7 +2146,7 @@
         </div>
         <div>
           <span style="font-size: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Audit Result</span>
-          <span class="pill pill-pass" style="font-size: 10px;">✓ CONTRADICTED</span>
+          <span class="pill pill-pass" style="font-size: 10px;">CONTRADICTED</span>
         </div>
       </div>
 
@@ -1928,9 +2184,9 @@
 
       <!-- Action Buttons -->
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; border-top: 1px solid var(--border-light); padding-top: 12px;">
-        <button class="btn btn-secondary btn-sm" onclick="copyDossierText()">📋 Copy Dispute Letter</button>
-        <button class="btn btn-secondary btn-sm" onclick="copyDossierJson()">📦 Copy JSON Payload</button>
-        <button class="btn btn-primary btn-sm" onclick="submitDossierToSellerCentral()">🚀 Submit to Amazon Seller Central</button>
+        <button class="btn btn-secondary btn-sm" onclick="copyDossierText()">Copy Dispute Letter</button>
+        <button class="btn btn-secondary btn-sm" onclick="copyDossierJson()">Copy JSON Payload</button>
+        <button class="btn btn-primary btn-sm" onclick="submitDossierToSellerCentral()">Submit to Amazon Seller Central</button>
       </div>
     </div>
   </div>
@@ -1939,12 +2195,12 @@
   <div class="modal-overlay" id="qrModal" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle">
     <div class="modal-card">
       <div class="modal-head">
-        <div class="modal-head-icon">📱</div>
+        <div class="modal-head-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
         <div class="modal-head-text">
           <span class="modal-title" id="qrModalTitle">Connect Handheld Phone Scanner</span>
           <span class="modal-sub">Live edge-vision capture pairing</span>
         </div>
-        <button class="modal-close" id="btnCloseQr" aria-label="Close">✕</button>
+        <button class="modal-close" id="btnCloseQr" aria-label="Close">&times;</button>
       </div>
       <p class="modal-desc">
         Scan this QR code with your smartphone camera to launch the operator scanner.
@@ -1963,7 +2219,7 @@
     Notification
   </div>
 
-  <script src="/static/cockpit.js?v=5.0"></script>
+  <script src="/static/cockpit.js?v=7.1"></script>
 </body>
 
 </html>

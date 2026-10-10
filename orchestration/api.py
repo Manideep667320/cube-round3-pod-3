@@ -26,6 +26,9 @@ import socket
 from pathlib import Path
 from typing import AsyncGenerator
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, File, Form, HTTPException, Response, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -48,9 +51,10 @@ from .orchestrator import (
     workflow_id_for,
 )
 from .store import EvidenceConflict, FileStore
+from .vision_analyzer import analyze_image_with_vlm
 
 ROOT = Path(__file__).resolve().parents[1]
-app = FastAPI(title="CUBE Round 3 Orchestrator & Commerce Cockpit")
+app = FastAPI(title="Medha Multi-Agent Commerce Cockpit")
 FLOW = os.environ.get("ORCH_FLOW") or default_flow_path()
 STORE = FileStore()
 
@@ -107,17 +111,22 @@ def health() -> dict:
 
 
 @app.get("/api/lan-ip")
-def lan_ip() -> dict:
-    ip = get_lan_ip()
-    port = int(os.environ.get("PORT", 8100))
-    return {"ip": ip, "port": port, "scanner_url": f"http://{ip}:{port}/scanner"}
-
-
-@app.get("/api/scanner-qr")
-def scanner_qr() -> Response:
+def lan_ip(stage: str | None = None) -> dict:
     ip = get_lan_ip()
     port = int(os.environ.get("PORT", 8100))
     url = f"http://{ip}:{port}/scanner"
+    if stage:
+        url += f"?stage={stage}"
+    return {"ip": ip, "port": port, "scanner_url": url}
+
+
+@app.get("/api/scanner-qr")
+def scanner_qr(stage: str | None = None) -> Response:
+    ip = get_lan_ip()
+    port = int(os.environ.get("PORT", 8100))
+    url = f"http://{ip}:{port}/scanner"
+    if stage:
+        url += f"?stage={stage}"
     qr = qrcode.QRCode(box_size=8, border=2)
     qr.add_data(url)
     qr.make(fit=True)
@@ -176,44 +185,79 @@ async def capture(
     # Yield control to event loop so SSE message flushes to cockpit browser immediately
     await asyncio.sleep(0.05)
 
+    # Step 2: Perform genuine AI visual analysis on the captured image
+    perception = await asyncio.to_thread(analyze_image_with_vlm, content, stage)
+
     case = {
         "org_id": org_id,
         "unit_id": unit_id,
         "route": "all",
         "returned": True,
+        "visual_perception": perception,
     }
     wf = STORE.load_workflow(workflow_id_for(case))
     if wf is None:
         wf = new_workflow(case, load_flow(FLOW))
+    wf.setdefault("context", {})["visual_perception"] = perception
 
-    # Reset state of target stage so orchestrator routes fresh capture to agent
+    # Reset state of target stage and downstream stages so orchestrator propagates fresh capture
+    do_reset = False
     for sr in wf["stage_results"]:
         if sr["stage"] == stage:
+            do_reset = True
+        if do_reset:
             sr["state"] = "pending"
             sr["attempts"] = 0
             sr["error"] = None
 
-    # If prep or returns changed, recovery should also re-audit
-    if stage in ("prep", "returns"):
-        for sr in wf["stage_results"]:
-            if sr["stage"] == "recovery":
-                sr["state"] = "pending"
-                sr["attempts"] = 0
-                sr["error"] = None
-
-    # Step 2: Route image data to agent and execute required tasks
+    # Step 3: Advance workflow through the pending stages so output cascades down
     wf = await asyncio.to_thread(advance, wf, load_flow(FLOW), STORE)
     ev_bundle = bundle(wf, STORE)
 
-    # Step 3: Broadcast completion event with full evidence for frontend display
+    # Enrich evidence records with real perception findings
+    for rec_id, ev in ev_bundle["evidence"].items():
+        payload = ev.setdefault("payload", {})
+        refs = ev.setdefault("refs", {})
+        if ev.get("stage") == stage or (stage == "receiving" and rec_id.startswith("RCV-")):
+            payload["visual_perception"] = perception
+            if perception.get("sku"):
+                payload["sku"] = perception["sku"]
+                refs["sku"] = perception["sku"]
+            if perception.get("item_name"):
+                payload["description"] = perception["item_name"]
+                payload["item_name"] = perception["item_name"]
+            if perception.get("supplier"):
+                payload["supplier"] = perception["supplier"]
+                refs["supplier"] = perception["supplier"]
+            if perception.get("po_id"):
+                payload["po_id"] = perception["po_id"]
+                refs["po_number"] = perception["po_id"]
+            if perception.get("findings"):
+                ev["checks"] = perception["findings"]
+            if perception.get("reasoning"):
+                ev.setdefault("decision", {})["reason"] = perception["reasoning"]
+            STORE.put_evidence(ev)
+        elif stage == "receiving":
+            # Cascade detected SKU and item name to downstream records
+            if perception.get("sku"):
+                refs["sku"] = perception["sku"]
+                payload["sku"] = perception["sku"]
+            if perception.get("item_name"):
+                payload["description"] = perception["item_name"]
+                payload["item_name"] = perception["item_name"]
+            payload["upstream_perception"] = perception
+            STORE.put_evidence(ev)
+
+    # Step 4: Broadcast completion event with full evidence for frontend display
     await broadcast_event("workflow", {
         "workflow": wf,
         "evidence": ev_bundle["evidence"],
         "stage": stage,
         "status": "completed",
+        "visual_perception": perception,
     })
 
-    # Step 4: Return confirmed delivery & results to phone
+    # Step 5: Return confirmed delivery & results to caller
     return {
         "status": "delivered",
         "delivery_confirmed": True,
@@ -224,6 +268,7 @@ async def capture(
         "url": img_url,
         "workflow": wf,
         "evidence": ev_bundle["evidence"],
+        "visual_perception": perception,
     }
 
 

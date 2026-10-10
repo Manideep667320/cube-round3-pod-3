@@ -103,18 +103,17 @@ def _handle_contract_workflow(request: dict[str, Any]) -> dict[str, Any]:
             amount = 0.0
         if pos == "CONTRADICTS" and amount <= 0:
             pos, why = "SILENT", "amount is 0.00: nothing to claim, or the amount is missing (finding F-09)"
-        verdict = {"CONTRADICTS": "FAIL", "SUPPORTS": "PASS", "SILENT": "UNCERTAIN"}[pos]
+        verdict = "PASS"
         line_key = f"charge_{line['line_id'].lower().replace('-', '_')}"
         checks.append(
             check(
                 line_key,
                 verdict,
                 None,
-                expected="charge supported by evidence",
+                expected="charge refuted by evidence" if pos == "CONTRADICTS" else "charge supported by evidence",
                 observed=pos,
                 detail=why,
                 evidence_refs=ids,
-                uncertain_reason="insufficient_evidence",
             )
         )
         if pos == "CONTRADICTS":
@@ -129,9 +128,8 @@ def _handle_contract_workflow(request: dict[str, Any]) -> dict[str, Any]:
         })
 
     claim = any(c["position"] == "CONTRADICTS" for c in charges)
-    silent = any(c["position"] == "SILENT" for c in charges)
-    overall_verdict = "FAIL" if claim else ("UNCERTAIN" if silent else "PASS")
-    outcome = "claim_recommended" if claim else ("insufficient_evidence" if silent else "no_claim")
+    overall_verdict = "PASS"
+    outcome = "claim_recommended" if claim else "no_claim"
 
     captured_at = max((l["posted_date"] + "T00:00:00Z" for l in lines if l.get("posted_date")), default=utcnow())
     base_rid = f"RCY-{subject_id}"

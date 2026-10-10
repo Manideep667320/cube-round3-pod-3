@@ -227,7 +227,7 @@ def _finalize(wf: dict, store) -> dict:
 
 
 # ---------------------------------------------------------------- public API
-def advance(wf: dict, flow: dict, store, clients: dict | None = None) -> dict:
+def advance(wf: dict, flow: dict, store, clients: dict | None = None, target_stage: str | None = None) -> dict:
     """Run every stage that has not completed (errored stages are retried), in order, until done or halted."""
     defaults = {"timeout_s": 30, "retries": 1, "on_uncertain": "continue", "on_error": "continue", **flow.get("defaults", {})}
     steps = {s["stage"]: s for s in flow["steps"]}
@@ -235,6 +235,8 @@ def advance(wf: dict, flow: dict, store, clients: dict | None = None) -> dict:
     _set_status(wf, "IN_PROGRESS", "advancing")
     store.save_workflow(wf)
     for idx, sr in enumerate(wf["stage_results"]):
+        if target_stage and sr["stage"] != target_stage:
+            continue
         if sr["state"] in ("completed", "skipped"):
             continue
         step = steps[sr["stage"]]
@@ -245,6 +247,8 @@ def advance(wf: dict, flow: dict, store, clients: dict | None = None) -> dict:
         if halt:
             wf["halted"] = {"stage": sr["stage"], "reason": halt, "at": utcnow()}
             _log(wf, "halted", sr["stage"], halt)
+            break
+        if target_stage:
             break
     return _finalize(wf, store)
 

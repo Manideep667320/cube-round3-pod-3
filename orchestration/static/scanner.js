@@ -16,12 +16,25 @@ const receiptStatus = document.getElementById('receiptStatus');
 const receiptHash = document.getElementById('receiptHash');
 const receiptVerdict = document.getElementById('receiptVerdict');
 
+// Parse URL query parameter for pre-selecting station stage (?stage=prep, etc.)
+const urlParams = new URLSearchParams(window.location.search);
+const initialStage = urlParams.get('stage') || urlParams.get('station');
+if (initialStage && ['receiving', 'prep', 'pack', 'returns', 'recovery'].includes(initialStage.toLowerCase())) {
+  currentStage = initialStage.toLowerCase();
+  document.querySelectorAll('.seg-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.stage === currentStage);
+  });
+}
+
 // Stage selection tabs
 document.querySelectorAll('.seg-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentStage = btn.dataset.stage;
+    if (selectedFile) {
+      btnUpload.textContent = `Route Photo to ${currentStage.toUpperCase()} Agent`;
+    }
   });
 });
 
@@ -74,11 +87,12 @@ btnUpload.addEventListener('click', async () => {
 
     const data = await res.json();
     if (receiptDelivery) {
-      receiptDelivery.textContent = data.delivery_confirmed ? '✓ CONFIRMED BY ORCHESTRATOR' : 'DISPATCHED';
+      receiptDelivery.textContent = data.delivery_confirmed ? 'CONFIRMED BY ORCHESTRATOR' : 'DISPATCHED';
     }
     if (receiptRoute) {
       const targetAgent = data.orchestrator_routed_to || currentStage;
-      receiptRoute.textContent = `${targetAgent.toUpperCase()} AGENT`;
+      const itemName = data.visual_perception?.item_name ? ` · ${data.visual_perception.item_name}` : '';
+      receiptRoute.textContent = `${targetAgent.toUpperCase()} AGENT${itemName}`;
     }
     if (receiptStatus) {
       receiptStatus.textContent = 'LIVE OUTPUT STREAMING IN COCKPIT';
@@ -97,12 +111,13 @@ btnUpload.addEventListener('click', async () => {
       }
     }
     if (receiptVerdict) {
-      receiptVerdict.textContent = verdict;
+      const cond = data.visual_perception?.condition ? ` (${data.visual_perception.condition})` : '';
+      receiptVerdict.textContent = `${verdict}${cond}`;
     }
     if (receiptCard) {
       receiptCard.style.display = 'block';
     }
-    btnUpload.textContent = '✓ Transmitted & Verified! Tap to Snap Another';
+    btnUpload.textContent = 'Transmitted & Verified! Tap to Snap Another';
     btnUpload.disabled = false;
   } catch (err) {
     alert('Upload error: ' + err.message);

@@ -80,14 +80,35 @@ def thresholds() -> dict:
 def vlm_config() -> dict:
     """Pick a provider from the env. Returns {provider, api_key, model} or {provider: None}.
 
-    Keys are never logged or echoed. MODEL_NAME overrides the default model id.
+    Keys are never logged or echoed. Dedicated RECEIVING_API_KEY takes priority,
+    falling back to unified keys and MODEL_NAME.
     """
+    rec_key = os.environ.get("RECEIVING_API_KEY")
+    rec_provider = (os.environ.get("RECEIVING_VLM_PROVIDER") or os.environ.get("VLM_PROVIDER") or "gemini").lower()
+
+    if rec_provider in ("grok", "xai"):
+        key = rec_key or os.environ.get("GROK_API_KEY") or os.environ.get("XAI_API_KEY") or ""
+        model = os.environ.get("RECEIVING_MODEL") or "grok-2-vision-1212"
+        return {"provider": "grok", "api_key": key, "model": model}
+
+    if rec_provider == "groq":
+        key = rec_key or os.environ.get("GROQ_API_KEY") or ""
+        model = os.environ.get("RECEIVING_MODEL") or os.environ.get("GROQ_VISION_MODEL") or "llama-3.2-11b-vision-preview"
+        return {"provider": "groq", "api_key": key, "model": model}
+
+    if rec_key:
+        provider = rec_provider
+        model = os.environ.get("RECEIVING_MODEL") or os.environ.get("MODEL_NAME") or "gemini-2.0-flash"
+        return {"provider": provider, "api_key": rec_key, "model": model}
+
     model = os.environ.get("MODEL_NAME") or ""
     alias = os.environ.get("VLM_API_KEY")
     candidates = (
         ("openai", os.environ.get("OPENAI_API_KEY"), model or "gpt-4o-mini"),
         ("anthropic", os.environ.get("ANTHROPIC_API_KEY"), model or "claude-3-5-sonnet-latest"),
         ("gemini", os.environ.get("GEMINI_API_KEY"), model or "gemini-2.0-flash"),
+        ("grok", os.environ.get("GROK_API_KEY") or os.environ.get("XAI_API_KEY"), model or "grok-2-vision-1212"),
+        ("groq", os.environ.get("GROQ_API_KEY"), model or "llama-3.2-11b-vision-preview"),
     )
     for provider, key, default_model in candidates:
         if key:

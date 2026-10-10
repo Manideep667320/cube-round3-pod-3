@@ -14,6 +14,9 @@ def map_to_work_order(request: dict[str, Any]) -> WorkOrder:
     prev_ev = request.get("previous_evidence", [])
     rcv = next((ev for ev in prev_ev if ev.get("stage") == "receiving"), None)
     rcv_refs = rcv.get("refs", {}) if rcv else {}
+    rcv_payload = rcv.get("payload", {}) if rcv else {}
+    vp = rcv_payload.get("visual_perception") or request.get("context", {}).get("case", {}).get("visual_perception")
+    detected_sku = (vp.get("sku") if vp else None) or rcv_refs.get("sku") or rcv_payload.get("sku")
 
     # Extract sample baseline fields if available
     row = sample_data.row("prep", unit_id, org_id) if sample_data.has("prep", unit_id, org_id) else {}
@@ -23,7 +26,7 @@ def map_to_work_order(request: dict[str, Any]) -> WorkOrder:
         unit_id=unit_id,
         org_id=org_id,
         fba_shipment_id=row.get("fba_shipment_id", f"FBA-{unit_id}"),
-        sku=rcv_refs.get("sku") or row.get("sku", "SKU-UNKNOWN"),
+        sku=detected_sku or row.get("sku", "SKU-UNKNOWN"),
         asin=rcv_refs.get("asin") or row.get("asin", "B0UNKNOWN"),
         fnsku=row.get("fnsku", "X0UNKNOWN"),
         prep_price_usd=float(row.get("prep_price_usd", 0.75)),

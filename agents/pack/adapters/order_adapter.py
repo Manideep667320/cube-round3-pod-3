@@ -49,10 +49,16 @@ def extract_expected_order(
     # Fallback to upstream evidence payloads
     for ev in reversed(request.get("previous_evidence") or []):
         payload = ev.get("payload") or {}
+        refs = ev.get("refs") or {}
         got = expected_from_any(payload.get("order_lines"))
         if got:
             return got
+        vp = payload.get("visual_perception") or payload.get("upstream_perception")
+        sku = (vp.get("sku") if isinstance(vp, dict) else None) or payload.get("sku") or refs.get("sku")
+        if sku:
+            return [{"sku": sku, "quantity": 1}]
 
-    # Fallback for known demo units
-    sku = request.get("subject", {}).get("refs", {}).get("sku") or "SKU-LAMP-LED"
+    # Fallback from case context
+    ctx_vp = request.get("context", {}).get("case", {}).get("visual_perception")
+    sku = (ctx_vp.get("sku") if isinstance(ctx_vp, dict) else None) or request.get("subject", {}).get("refs", {}).get("sku") or "SKU-INSPECTED"
     return [{"sku": sku, "quantity": 1}]
